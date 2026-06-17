@@ -38,8 +38,12 @@ for cmd in devcontainer docker jq; do
 done
 
 # --- 2. CONFIGURACIÓN DE CACHÉ EN EL HOST ---
-log_info "Asegurando directorio de caché en el host: $DCDEV_CACHE_DIR"
+if [[ "$DCDEV_CACHE_DIR" == "~/"* ]]; then
+    DCDEV_CACHE_DIR="${HOME}/${DCDEV_CACHE_DIR#~/}"
+fi
 mkdir -p "$DCDEV_CACHE_DIR"
+DCDEV_CACHE_DIR=$(readlink -f "$DCDEV_CACHE_DIR")
+log_info "Directorio de caché persistente en el host: $DCDEV_CACHE_DIR"
 
 # --- 3. DETECCIÓN INTERACTIVA DEL ARCHIVO DE CONFIGURACIÓN ---
 if [[ -n "${DEVCONTAINER_CONFIG:-}" ]]; then
@@ -88,6 +92,9 @@ else
         fi
     fi
 fi
+
+# Convertir la ruta del archivo de configuración a un path absoluto
+CONFIG=$(readlink -f "$CONFIG")
 
 log_info "Usando archivo de configuración seleccionado: $CONFIG"
 
