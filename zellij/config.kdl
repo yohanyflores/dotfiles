@@ -1,0 +1,13 @@
+// Configuración básica de Zellij
+// ~/.config/zellij/config.kdl
+
+keybinds {
+    normal {
+        // Añade tus atajos aquí
+    }
+}
+
+theme "default"
+default_layout "compact"
+mouse_mode true
+copy_on_select true

@@ -1,0 +1,20 @@
+# Configuración de Git personal
+# ~/.gitconfig
+
+[user]
+    name = Tu Nombre
+    email = tu_correo@ejemplo.com
+
+[core]
+    editor = nvim
+    excludesfile = ~/.gitignore_global
+
+[init]
+    defaultBranch = main
+
+[alias]
+    co = checkout
+    br = branch
+    ci = commit
+    st = status
+    lg = log --oneline --graph --decorate

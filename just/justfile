@@ -1,0 +1,10 @@
+# Justfile personal para tareas rápidas
+# ~/.justfile
+
+# Saludar
+hello:
+    echo "¡Hola desde Just en Dev Container!"
+
+# Mostrar estado de contenedores locales
+docker-status:
+    docker ps -a
