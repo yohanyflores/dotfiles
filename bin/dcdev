@@ -93,13 +93,14 @@ else
     fi
 fi
 
-# Convertir la ruta del archivo de configuración a un path absoluto
+# Resolver rutas físicas absolutas para evitar discrepancias por enlaces simbólicos en el host (ej. /home/yohany/Develop -> /mnt/SSD-Linux/...)
+RESOLVED_PWD=$(readlink -f "$PWD")
 CONFIG=$(readlink -f "$CONFIG")
 
-# Convertir a ruta relativa respecto al espacio de trabajo para evitar bugs de resolución en el CLI
+# Convertir a ruta relativa respecto al espacio de trabajo físico para evitar bugs de resolución en el CLI
 CONFIG_FOR_CLI="$CONFIG"
-if [[ "$CONFIG" == "$PWD/"* ]]; then
-    CONFIG_FOR_CLI="${CONFIG#$PWD/}"
+if [[ "$CONFIG" == "$RESOLVED_PWD/"* ]]; then
+    CONFIG_FOR_CLI="${CONFIG#$RESOLVED_PWD/}"
 fi
 
 log_info "Usando archivo de configuración seleccionado: $CONFIG (para el CLI: $CONFIG_FOR_CLI)"
@@ -110,6 +111,12 @@ log_info "Generando override dinámico de configuración..."
 # Determinar la carpeta de la configuración para colocar el override en el mismo directorio
 CONFIG_DIR=$(dirname "$CONFIG")
 OVERRIDE_FILE=$(mktemp "${CONFIG_DIR}/devcontainer-override-XXXXXX.json")
+
+# Convertir el override a ruta relativa respecto al espacio de trabajo físico
+OVERRIDE_FILE_FOR_CLI="$OVERRIDE_FILE"
+if [[ "$OVERRIDE_FILE" == "$RESOLVED_PWD/"* ]]; then
+    OVERRIDE_FILE_FOR_CLI="${OVERRIDE_FILE#$RESOLVED_PWD/}"
+fi
 
 # Limpieza segura al salir
 trap 'rm -f "$OVERRIDE_FILE"' EXIT INT TERM
@@ -148,7 +155,7 @@ log_info "Config: $CONFIG_FOR_CLI"
 if ! devcontainer up \
     --workspace-folder "$PWD" \
     --config "$CONFIG_FOR_CLI" \
-    --override-config "$OVERRIDE_FILE" \
+    --override-config "$OVERRIDE_FILE_FOR_CLI" \
     --dotfiles-repository "$DOTFILES_REPOSITORY" \
     --dotfiles-target-path "$DOTFILES_TARGET_PATH" \
     --dotfiles-install-command "$DOTFILES_INSTALL_COMMAND" >/dev/null; then
