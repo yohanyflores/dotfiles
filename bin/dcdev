@@ -121,31 +121,96 @@ fi
 # Limpieza segura al salir
 trap 'rm -f "$OVERRIDE_FILE"' EXIT INT TERM
 
-# Estructura base
-OVERRIDE_JSON='{"mounts":[],"remoteEnv":{}}'
+# Ejecutar Node para limpiar comentarios de la configuración base y combinarla con los overrides.
+# Esto soluciona de raíz el bug del CLI de devcontainer al usar --override-config (que lee el archivo
+# de override completo en lugar de fusionar parcialmente, requiriendo propiedades base de levantamiento).
+node -e '
+const fs = require("fs");
 
-# Montar SSH Agent si está disponible en el host
-if [[ -n "${SSH_AUTH_SOCK:-}" ]]; then
-    OVERRIDE_JSON=$(echo "$OVERRIDE_JSON" | jq \
-      '.mounts += ["source=${localEnv:SSH_AUTH_SOCK},target=/ssh-agent,type=bind"] | .remoteEnv.SSH_AUTH_SOCK = "/ssh-agent"')
-    log_info "Agregado soporte de SSH Agent Forwarding al override."
-fi
+function stripComments(jsonc) {
+  let isString = false;
+  let isLineComment = false;
+  let isBlockComment = false;
+  let result = "";
+  for (let i = 0; i < jsonc.length; i++) {
+    const char = jsonc[i];
+    const nextChar = jsonc[i + 1];
+    if (isLineComment) {
+      if (char === "\n" || char === "\r") {
+        isLineComment = false;
+        result += char;
+      }
+    } else if (isBlockComment) {
+      if (char === "*" && nextChar === "/") {
+        isBlockComment = false;
+        i++;
+      }
+    } else if (isString) {
+      if (char === "\"" && jsonc[i - 1] !== "\\") {
+        isString = false;
+      }
+      result += char;
+    } else {
+      if (char === "/" && nextChar === "/") {
+        isLineComment = true;
+        i++;
+      } else if (char === "/" && nextChar === "*") {
+        isBlockComment = true;
+        i++;
+      } else {
+        if (char === "\"") {
+          isString = true;
+        }
+        result += char;
+      }
+    }
+  }
+  return result;
+}
 
-# Montar caché de herramientas
-OVERRIDE_JSON=$(echo "$OVERRIDE_JSON" | jq \
-  --arg cache_src "$DCDEV_CACHE_DIR" \
-  '.mounts += ["source=\($cache_src),target=/tmp/dcdev-tools-cache,type=bind"] | .remoteEnv.DOTFILES_CACHE_DIR = "/tmp/dcdev-tools-cache"')
-log_info "Agregado montaje de caché persistente al override."
+try {
+  const configFile = process.argv[1];
+  const overrideFile = process.argv[2];
+  const cacheDir = process.argv[3];
+  const sshAuthSock = process.env.SSH_AUTH_SOCK;
+  const githubToken = process.env.GITHUB_TOKEN;
 
-# Propagar GITHUB_TOKEN si existe en el host
-if [[ -n "${GITHUB_TOKEN:-}" ]]; then
-    OVERRIDE_JSON=$(echo "$OVERRIDE_JSON" | jq \
-      '.remoteEnv.GITHUB_TOKEN = "${localEnv:GITHUB_TOKEN}"')
-    log_info "Propagando GITHUB_TOKEN para evadir rate limits."
-fi
+  const jsonc = fs.readFileSync(configFile, "utf8");
+  const cleanJson = stripComments(jsonc);
+  const config = JSON.parse(cleanJson);
 
-# Guardar en archivo temporal
-echo "$OVERRIDE_JSON" > "$OVERRIDE_FILE"
+  // Garantizar que las secciones de configuración existen
+  if (!config.mounts) {
+    config.mounts = [];
+  }
+  if (!config.remoteEnv) {
+    config.remoteEnv = {};
+  }
+
+  // Soporte de SSH Agent
+  if (sshAuthSock) {
+    config.mounts.push("source=${localEnv:SSH_AUTH_SOCK},target=/ssh-agent,type=bind");
+    config.remoteEnv.SSH_AUTH_SOCK = "/ssh-agent";
+  }
+
+  // Soporte de caché de herramientas
+  if (cacheDir) {
+    config.mounts.push(`source=${cacheDir},target=/tmp/dcdev-tools-cache,type=bind`);
+    config.remoteEnv.DOTFILES_CACHE_DIR = "/tmp/dcdev-tools-cache";
+  }
+
+  // Soporte de GITHUB_TOKEN
+  if (githubToken) {
+    config.remoteEnv.GITHUB_TOKEN = "${localEnv:GITHUB_TOKEN}";
+  }
+
+  fs.writeFileSync(overrideFile, JSON.stringify(config, null, 2), "utf8");
+} catch (e) {
+  console.error("Fallo al generar el archivo de override fusionado:", e.message);
+  process.exit(1);
+}
+' "$CONFIG" "$OVERRIDE_FILE" "$DCDEV_CACHE_DIR"
+
 log_info "Override JSON generado ($OVERRIDE_FILE_FOR_CLI):"
 cat "$OVERRIDE_FILE"
 
