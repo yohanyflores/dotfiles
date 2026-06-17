@@ -146,19 +146,30 @@ fi
 
 # Guardar en archivo temporal
 echo "$OVERRIDE_JSON" > "$OVERRIDE_FILE"
+log_info "Override JSON generado ($OVERRIDE_FILE_FOR_CLI):"
+cat "$OVERRIDE_FILE"
 
 # --- 5. LEVANTAR CONTENEDOR CON @DEVCONTAINERS/CLI ---
 log_info "Levantando el Dev Container..."
 log_info "Config: $CONFIG_FOR_CLI"
 
-# Ejecutamos devcontainer up. Los logs de compilación van a stderr en tiempo real.
+log_info "Ejecutando comando CLI de levantamiento:"
+echo "devcontainer up \\"
+echo "    --workspace-folder \"$PWD\" \\"
+echo "    --config \"$CONFIG_FOR_CLI\" \\"
+echo "    --override-config \"$OVERRIDE_FILE_FOR_CLI\" \\"
+echo "    --dotfiles-repository \"$DOTFILES_REPOSITORY\" \\"
+echo "    --dotfiles-target-path \"$DOTFILES_TARGET_PATH\" \\"
+echo "    --dotfiles-install-command \"$DOTFILES_INSTALL_COMMAND\""
+
+# Ejecutamos devcontainer up mostrando toda la salida a la terminal
 if ! devcontainer up \
     --workspace-folder "$PWD" \
     --config "$CONFIG_FOR_CLI" \
     --override-config "$OVERRIDE_FILE_FOR_CLI" \
     --dotfiles-repository "$DOTFILES_REPOSITORY" \
     --dotfiles-target-path "$DOTFILES_TARGET_PATH" \
-    --dotfiles-install-command "$DOTFILES_INSTALL_COMMAND" >/dev/null; then
+    --dotfiles-install-command "$DOTFILES_INSTALL_COMMAND"; then
     log_error "Fallo al ejecutar 'devcontainer up'."
     exit 1
 fi
@@ -172,5 +183,8 @@ if devcontainer exec --workspace-folder "$PWD" command -v bash >/dev/null 2>&1; 
 else
     SHELL_CMD="sh"
 fi
+
+log_info "Ejecutando comando CLI de conexión:"
+echo "devcontainer exec --workspace-folder \"$PWD\" \"$SHELL_CMD\""
 
 exec devcontainer exec --workspace-folder "$PWD" "$SHELL_CMD"
