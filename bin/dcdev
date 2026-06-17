@@ -96,7 +96,13 @@ fi
 # Convertir la ruta del archivo de configuración a un path absoluto
 CONFIG=$(readlink -f "$CONFIG")
 
-log_info "Usando archivo de configuración seleccionado: $CONFIG"
+# Convertir a ruta relativa respecto al espacio de trabajo para evitar bugs de resolución en el CLI
+CONFIG_FOR_CLI="$CONFIG"
+if [[ "$CONFIG" == "$PWD/"* ]]; then
+    CONFIG_FOR_CLI="${CONFIG#$PWD/}"
+fi
+
+log_info "Usando archivo de configuración seleccionado: $CONFIG (para el CLI: $CONFIG_FOR_CLI)"
 
 # --- 4. CONSTRUCCIÓN DINÁMICA DEL OVERRIDE (SSH Y CACHÉ) ---
 log_info "Generando override dinámico de configuración..."
@@ -133,12 +139,12 @@ echo "$OVERRIDE_JSON" > "$OVERRIDE_FILE"
 
 # --- 5. LEVANTAR CONTENEDOR CON @DEVCONTAINERS/CLI ---
 log_info "Levantando el Dev Container..."
-log_info "Config: $CONFIG"
+log_info "Config: $CONFIG_FOR_CLI"
 
 # Ejecutamos devcontainer up. Los logs de compilación van a stderr en tiempo real.
 if ! devcontainer up \
     --workspace-folder "$PWD" \
-    --config "$CONFIG" \
+    --config "$CONFIG_FOR_CLI" \
     --override-config "$OVERRIDE_FILE" \
     --dotfiles-repository "$DOTFILES_REPOSITORY" \
     --dotfiles-target-path "$DOTFILES_TARGET_PATH" \
