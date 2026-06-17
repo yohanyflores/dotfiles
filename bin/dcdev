@@ -106,7 +106,10 @@ log_info "Usando archivo de configuración seleccionado: $CONFIG (para el CLI: $
 
 # --- 4. CONSTRUCCIÓN DINÁMICA DEL OVERRIDE (SSH Y CACHÉ) ---
 log_info "Generando override dinámico de configuración..."
-OVERRIDE_FILE=$(mktemp /tmp/devcontainer-override-XXXXXX.json)
+
+# Determinar la carpeta de la configuración para colocar el override en el mismo directorio
+CONFIG_DIR=$(dirname "$CONFIG")
+OVERRIDE_FILE=$(mktemp "${CONFIG_DIR}/devcontainer-override-XXXXXX.json")
 
 # Limpieza segura al salir
 trap 'rm -f "$OVERRIDE_FILE"' EXIT INT TERM
