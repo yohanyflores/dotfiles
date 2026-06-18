@@ -309,6 +309,7 @@ create_symlink "$DOTFILES_DIR/nvim"   "$HOME/.config/nvim"
 create_symlink "$DOTFILES_DIR/zellij" "$HOME/.config/zellij"
 create_symlink "$DOTFILES_DIR/tmux"   "$HOME/.config/tmux"
 create_symlink "$DOTFILES_DIR/fish"   "$HOME/.config/fish"
+create_symlink "$DOTFILES_DIR/lazygit" "$HOME/.config/lazygit"
 
 if [[ -f "$DOTFILES_DIR/git/gitconfig" ]]; then
     create_symlink "$DOTFILES_DIR/git/gitconfig" "$HOME/.gitconfig"

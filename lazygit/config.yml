@@ -1,0 +1,6 @@
+customCommands:
+  - key: 'a'
+    command: 'if git diff --quiet --cached; then echo "Error: No hay cambios preparados (staged) para hacer commit." && read -p "Presiona Enter para continuar..." && exit 1; fi; git diff --staged | agy --print "Genera un mensaje de commit conciso para estos cambios. Devuelve ÚNICAMENTE el mensaje de commit crudo, sin formato markdown, sin bloques de código, sin comillas y sin explicaciones adicionales. Sigue el formato de Conventional Commits." > /tmp/agy_commit_msg && git commit -e -F /tmp/agy_commit_msg'
+    context: 'files'
+    subprocess: true
+    description: 'Generar mensaje de commit con agy (AI)'
