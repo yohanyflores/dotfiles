@@ -4,7 +4,7 @@
 # Descripción: Genera un mensaje de commit con AI (agy) y lo presenta en un
 #              editor interactivo para aceptar, editar o cancelar.
 #
-# Flujo:  Ctrl+D = aceptar/guardar  |  Ctrl+C = cancelar  |  Edita libremente
+# Flujo:  Enter = aceptar  |  Ctrl+C = cancelar  |  Edita libremente
 # ==============================================================================
 
 set -euo pipefail
@@ -63,7 +63,6 @@ styled_err() {
 # --- 1. Validar que existan cambios staged ---
 if git diff --quiet --cached; then
     styled_err "No hay cambios en stage para hacer commit."
-    read -r -p "  Presiona Enter para volver..." _
     exit 1
 fi
 
@@ -77,7 +76,6 @@ set -e
 
 if [[ $AGY_STATUS -ne 0 ]] || [[ -z "${AI_MSG// /}" ]]; then
     styled_err "Fallo al generar el mensaje con agy."
-    read -r -p "  Presiona Enter para volver..." _
     exit 1
 fi
 
@@ -85,7 +83,7 @@ fi
 if $HAS_GUM; then
     # ── Flujo con gum: un solo paso ──
     styled_header "✏️  Revisa el mensaje — edítalo si quieres"
-    styled_info "Ctrl+D → aceptar y hacer commit  •  Ctrl+C → cancelar"
+    styled_info "Enter → aceptar y hacer commit  •  Ctrl+C → cancelar"
     echo ""
 
     set +e
@@ -108,7 +106,6 @@ if $HAS_GUM; then
     if [[ $GUM_EXIT -ne 0 ]]; then
         echo ""
         styled_warn "Commit cancelado."
-        read -r -p "  Presiona Enter para volver..." _
         exit 0
     fi
 else
@@ -136,7 +133,6 @@ else
             ;;
         *)
             styled_warn "Commit cancelado."
-            read -r -p "  Presiona Enter para volver..." _
             exit 0
             ;;
     esac
@@ -147,7 +143,6 @@ FINAL_MSG=$(echo "$FINAL_MSG" | sed '/^[[:space:]]*$/d')
 
 if [[ -z "${FINAL_MSG// /}" ]]; then
     styled_warn "Mensaje vacío. Commit abortado."
-    read -r -p "  Presiona Enter para volver..." _
     exit 0
 fi
 
@@ -155,4 +150,3 @@ git commit -m "$FINAL_MSG"
 
 echo ""
 styled_ok "Commit realizado con éxito"
-read -r -p "  Presiona Enter para volver..." _
