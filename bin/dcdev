@@ -420,10 +420,15 @@ if ! devcontainer exec --workspace-folder "$PWD" --config "$CONFIG_FOR_CLI" "$IN
     TARGET="$2"
     MARKER="$HOME/.devcontainer/.dotfilesMarker"
     
-    # Auto-recuperación: si existe el marcador pero no está el repositorio clonado con .git,
-    # o si faltan herramientas core/nice (como lazygit o yazi), borramos el marcador para forzar la instalación.
-    if [ -f "$MARKER" ] && { [ ! -d "$TARGET/.git" ] || [ ! -x "$HOME/.local/bin/lazygit" ] || [ ! -x "$HOME/.local/bin/yazi" ]; }; then
-        echo -e "\e[33m[dcdev:dotfiles] El marcador existe pero la instalación está incompleta o faltan herramientas del perfil (ej. lazygit o yazi). Forzando re-instalación...\e[0m"
+    # Auto-recuperación: si existe el marcador pero falta alguna herramienta clave del perfil,
+    # borramos el marcador para forzar la re-instalación.
+    NEED_INSTALL=false
+    if [ ! -d "$TARGET/.git" ] || [ ! -x "$HOME/.local/bin/lazygit" ] || [ ! -x "$HOME/.local/bin/yazi" ]; then
+        NEED_INSTALL=true
+    fi
+    
+    if [ -f "$MARKER" ] && [ "$NEED_INSTALL" = "true" ]; then
+        echo -e "\e[33m[dcdev:dotfiles] El marcador existe pero la instalación está incompleta o faltan herramientas (ej. lazygit o yazi). Forzando re-instalación...\e[0m"
         rm -f "$MARKER"
     fi
     
