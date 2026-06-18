@@ -225,16 +225,22 @@ echo "    --config \"$CONFIG_FOR_CLI\" \\"
 echo "    --override-config \"$OVERRIDE_FILE_FOR_CLI\" \\"
 echo "    --dotfiles-repository \"$DOTFILES_REPOSITORY\" \\"
 echo "    --dotfiles-target-path \"$DOTFILES_TARGET_PATH\" \\"
-echo "    --dotfiles-install-command \"$DOTFILES_INSTALL_COMMAND\""
+if [[ $# -gt 0 ]]; then
+    echo "    --dotfiles-install-command \"$DOTFILES_INSTALL_COMMAND\" \\"
+    echo "    $*"
+else
+    echo "    --dotfiles-install-command \"$DOTFILES_INSTALL_COMMAND\""
+fi
 
-# Ejecutamos devcontainer up mostrando toda la salida a la terminal
+# Ejecutamos devcontainer up mostrando toda la salida a la terminal y propagando argumentos adicionales
 if ! devcontainer up \
     --workspace-folder "$PWD" \
     --config "$CONFIG_FOR_CLI" \
     --override-config "$OVERRIDE_FILE_FOR_CLI" \
     --dotfiles-repository "$DOTFILES_REPOSITORY" \
     --dotfiles-target-path "$DOTFILES_TARGET_PATH" \
-    --dotfiles-install-command "$DOTFILES_INSTALL_COMMAND"; then
+    --dotfiles-install-command "$DOTFILES_INSTALL_COMMAND" \
+    "$@"; then
     log_error "Fallo al ejecutar 'devcontainer up'."
     exit 1
 fi
