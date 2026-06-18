@@ -327,4 +327,8 @@ if ! grep -q "local/bin" "$HOME/.bashrc" 2>/dev/null; then
     log_info "PATH local agregado a ~/.bashrc"
 fi
 
+# Crear marcador de éxito para dcdev
+mkdir -p "$HOME/.devcontainer"
+touch "$HOME/.devcontainer/.dotfilesSuccess"
+
 log_info "Entorno de Dev Container personalizado con éxito."

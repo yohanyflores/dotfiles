@@ -419,16 +419,17 @@ if ! devcontainer exec --workspace-folder "$PWD" --config "$CONFIG_FOR_CLI" "$IN
     REPO="$1"
     TARGET="$2"
     MARKER="$HOME/.devcontainer/.dotfilesMarker"
+    SUCCESS_MARKER="$HOME/.devcontainer/.dotfilesSuccess"
     
-    # Auto-recuperación: si existe el marcador pero falta alguna herramienta clave del perfil,
-    # borramos el marcador para forzar la re-instalación.
+    # Auto-recuperación: si existe el marcador pero falta el marcador de éxito del instalador,
+    # o si falta la carpeta .git, borramos el marcador para forzar la instalación.
     NEED_INSTALL=false
-    if [ ! -d "$TARGET/.git" ] || [ ! -x "$HOME/.local/bin/lazygit" ] || [ ! -x "$HOME/.local/bin/yazi" ]; then
+    if [ ! -d "$TARGET/.git" ] || [ ! -f "$SUCCESS_MARKER" ]; then
         NEED_INSTALL=true
     fi
     
     if [ -f "$MARKER" ] && [ "$NEED_INSTALL" = "true" ]; then
-        echo -e "\e[33m[dcdev:dotfiles] El marcador existe pero la instalación está incompleta o faltan herramientas (ej. lazygit o yazi). Forzando re-instalación...\e[0m"
+        echo -e "\e[33m[dcdev:dotfiles] El marcador existe pero la instalación previa no finalizó con éxito. Forzando re-instalación...\e[0m"
         rm -f "$MARKER"
     fi
     
@@ -472,8 +473,12 @@ if ! devcontainer exec --workspace-folder "$PWD" --config "$CONFIG_FOR_CLI" "$IN
     TARGET="$1"
     CMD="$2"
     MARKER="$HOME/.devcontainer/.dotfilesMarker"
+    SUCCESS_MARKER="$HOME/.devcontainer/.dotfilesSuccess"
     
     if [ ! -f "$MARKER" ]; then
+        # Eliminar el marcador de éxito previo antes de ejecutar
+        rm -f "$SUCCESS_MARKER" 2>/dev/null || true
+        
         if [ -n "$CMD" ]; then
             INSTALL_SCRIPT="$TARGET/$CMD"
             if [ -f "$INSTALL_SCRIPT" ]; then
@@ -493,7 +498,7 @@ if ! devcontainer exec --workspace-folder "$PWD" --config "$CONFIG_FOR_CLI" "$IN
             fi
         fi
         
-        # Crear marcador
+        # Crear marcador de dotfiles (el de éxito se crea dentro de install-devcontainer.sh)
         mkdir -p "$(dirname "$MARKER")"
         touch "$MARKER"
         echo -e "\e[34m[dcdev:dotfiles]\e[0m Instalación finalizada y marcador creado."
