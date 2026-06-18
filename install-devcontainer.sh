@@ -257,25 +257,25 @@ fi
 if [[ "$DOTFILES_PROFILE" == "core" || "$DOTFILES_PROFILE" == "full" ]]; then
     log_info "Instalando herramientas del perfil CORE..."
     
-    install_github_tool "lazygit" "jesseduffield/lazygit" "$LAZYGIT_VERSION" "lazygit_${VERSION_NO_V}_Linux_${ARCH}.tar.gz"
-    install_github_tool "just" "casey/just" "$JUST_VERSION" "just-${TAG}-${ARCH}-unknown-linux-musl.tar.gz"
-    install_github_tool "zellij" "zellij-org/zellij" "$ZELLIJ_VERSION" "zellij-${ARCH}-unknown-linux-musl.tar.gz"
-    install_github_tool "yq" "mikefarah/yq" "$YQ_VERSION" "yq_linux_${ARCH}"
+    install_github_tool "lazygit" "jesseduffield/lazygit" "$LAZYGIT_VERSION" 'lazygit_${VERSION_NO_V}_Linux_${ARCH}.tar.gz'
+    install_github_tool "just" "casey/just" "$JUST_VERSION" 'just-${TAG}-${ARCH}-unknown-linux-musl.tar.gz'
+    install_github_tool "zellij" "zellij-org/zellij" "$ZELLIJ_VERSION" 'zellij-${ARCH}-unknown-linux-musl.tar.gz'
+    install_github_tool "yq" "mikefarah/yq" "$YQ_VERSION" 'yq_linux_${ARCH}'
 fi
 
 # --- PERFIL: NICE ---
 if [[ "$DOTFILES_PROFILE" == "full" ]]; then
     log_info "Instalando herramientas del perfil NICE..."
     
-    install_github_tool "bat" "sharkdp/bat" "$BAT_VERSION" "bat-v${VERSION_NO_V}-${ARCH}-unknown-linux-musl.tar.gz" "bat"
-    install_github_tool "eza" "eza-community/eza" "$EZA_VERSION" "eza_${ARCH}-unknown-linux-musl.tar.gz" "eza"
-    install_github_tool "delta" "dandavison/delta" "$DELTA_VERSION" "delta-${TAG}-${ARCH}-unknown-linux-musl.tar.gz" "delta"
-    install_github_tool "shfmt" "mvdan/sh" "$SHFMT_VERSION" "shfmt_v${VERSION_NO_V}_linux_${ARCH}"
-    install_github_tool "xh" "ducaale/xh" "$XH_VERSION" "xh-v${VERSION_NO_V}-${ARCH}-unknown-linux-musl.tar.gz" "xh"
-    install_github_tool "yazi" "sxyazi/yazi" "$YAZI_VERSION" "yazi-${ARCH}-unknown-linux-musl.zip" "yazi"
-    install_github_tool "micro" "zyedidia/micro" "$MICRO_VERSION" "micro-${VERSION_NO_V}-${ARCH}.tar.gz" "micro"
-    install_github_tool "gomplate" "hairyhenderson/gomplate" "$GOMPLATE_VERSION" "gomplate_linux-${ARCH}"
-    install_github_tool "gum" "charmbracelet/gum" "$GUM_VERSION" "gum_${VERSION_NO_V}_Linux_${ARCH}.tar.gz"
+    install_github_tool "bat" "sharkdp/bat" "$BAT_VERSION" 'bat-v${VERSION_NO_V}-${ARCH}-unknown-linux-musl.tar.gz' "bat"
+    install_github_tool "eza" "eza-community/eza" "$EZA_VERSION" 'eza_${ARCH}-unknown-linux-musl.tar.gz' "eza"
+    install_github_tool "delta" "dandavison/delta" "$DELTA_VERSION" 'delta-${TAG}-${ARCH}-unknown-linux-musl.tar.gz' "delta"
+    install_github_tool "shfmt" "mvdan/sh" "$SHFMT_VERSION" 'shfmt_v${VERSION_NO_V}_linux_${ARCH}'
+    install_github_tool "xh" "ducaale/xh" "$XH_VERSION" 'xh-v${VERSION_NO_V}-${ARCH}-unknown-linux-musl.tar.gz' "xh"
+    install_github_tool "yazi" "sxyazi/yazi" "$YAZI_VERSION" 'yazi-${ARCH}-unknown-linux-musl.zip' "yazi"
+    install_github_tool "micro" "zyedidia/micro" "$MICRO_VERSION" 'micro-${VERSION_NO_V}-${ARCH}.tar.gz' "micro"
+    install_github_tool "gomplate" "hairyhenderson/gomplate" "$GOMPLATE_VERSION" 'gomplate_linux-${ARCH}'
+    install_github_tool "gum" "charmbracelet/gum" "$GUM_VERSION" 'gum_${VERSION_NO_V}_Linux_${ARCH}.tar.gz'
 fi
 
 # --- PERFIL: EXPERIMENTAL ---
