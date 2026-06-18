@@ -470,9 +470,8 @@ if [[ -n "$EXISTING_CONTAINER_FOR_COPY" ]] && [[ -d "$DOTFILES_HOST_DIR" ]]; the
     CONTAINER_USER=$(devcontainer exec --workspace-folder "$PWD" --config "$CONFIG_FOR_CLI" whoami 2>/dev/null | tr -d '\r\n' || echo "vscode")
     CONTAINER_USER="${CONTAINER_USER:-vscode}"
     docker exec "$EXISTING_CONTAINER_FOR_COPY" chown -R "$CONTAINER_USER" "$DOTFILES_TARGET_PATH" 2>/dev/null || true
-    if docker exec "$EXISTING_CONTAINER_FOR_COPY" test -f "$DOTFILES_TARGET_PATH/install-devcontainer.sh" 2>/dev/null; then
-        docker exec "$EXISTING_CONTAINER_FOR_COPY" chmod +x "$DOTFILES_TARGET_PATH/install-devcontainer.sh" 2>/dev/null || true
-    fi
+    # Hacer ejecutables todos los scripts .sh
+    docker exec "$EXISTING_CONTAINER_FOR_COPY" sh -c "find $DOTFILES_TARGET_PATH -name '*.sh' -exec chmod +x {} \;" 2>/dev/null || true
 fi
 
 # 8.3. Ejecutar comando de instalación y crear marcador

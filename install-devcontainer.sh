@@ -310,6 +310,7 @@ create_symlink "$DOTFILES_DIR/zellij" "$HOME/.config/zellij"
 create_symlink "$DOTFILES_DIR/tmux"   "$HOME/.config/tmux"
 create_symlink "$DOTFILES_DIR/fish"   "$HOME/.config/fish"
 create_symlink "$DOTFILES_DIR/lazygit" "$HOME/.config/lazygit"
+create_symlink "$DOTFILES_DIR/scripts/git-agy-commit.sh" "$HOME/.local/bin/git-agy-commit"
 
 if [[ -f "$DOTFILES_DIR/git/gitconfig" ]]; then
     create_symlink "$DOTFILES_DIR/git/gitconfig" "$HOME/.gitconfig"
