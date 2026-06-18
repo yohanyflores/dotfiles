@@ -413,41 +413,62 @@ else
     INSTALL_SHELL="sh"
 fi
 
+# 8.1. Asegurar que el repositorio está clonado
 if ! devcontainer exec --workspace-folder "$PWD" --config "$CONFIG_FOR_CLI" "$INSTALL_SHELL" -c '
     set -e
     REPO="$1"
     TARGET="$2"
-    CMD="$3"
     MARKER="$HOME/.devcontainer/.dotfilesMarker"
     
     # Auto-recuperación: si existe el marcador pero no está el repositorio clonado con .git,
-    # significa que la clonación anterior falló. Borramos el marcador para reintentar de verdad.
+    # significa que la clonación anterior falló. Borramos el marcador para reintentar.
     if [ -f "$MARKER" ] && [ ! -d "$TARGET/.git" ]; then
-        echo -e "\e[33m[dcdev:dotfiles] El marcador existe pero el repositorio no está clonado (.git no encontrado). Forzando re-instalación...\e[0m"
+        echo -e "\e[33m[dcdev:dotfiles] El marcador existe pero el repositorio no está clonado. Forzando re-instalación...\e[0m"
         rm -f "$MARKER"
     fi
     
-    if [ ! -f "$MARKER" ]; then
-        echo -e "\e[34m[dcdev:dotfiles]\e[0m No se encontró el marcador. Iniciando instalación de dotfiles..."
-        
-        # Clonar si no existe la carpeta o si no está inicializada con .git
+    if [ ! -f "$MARKER" ] || [ ! -d "$TARGET/.git" ]; then
         if [ ! -d "$TARGET/.git" ]; then
-            # Si existía la carpeta sin .git (por ejemplo, vacía o fallida), la borramos primero
             if [ -d "$TARGET" ]; then
                 echo -e "\e[33m[dcdev:dotfiles] Limpiando directorio de clonación fallido previo en $TARGET...\e[0m"
                 rm -rf "$TARGET"
             fi
-            
             echo -e "\e[34m[dcdev:dotfiles]\e[0m Clonando $REPO en $TARGET..."
             if ! git clone "$REPO" "$TARGET"; then
                 echo -e "\e[31m[dcdev:dotfiles] ERROR: Falló la clonación del repositorio de dotfiles.\e[0m" >&2
                 exit 1
             fi
-        else
-            echo -e "\e[34m[dcdev:dotfiles]\e[0m El directorio $TARGET ya está clonado (.git encontrado)."
         fi
-        
-        # Ejecutar comando de instalación
+    fi
+' -- "$DOTFILES_REPOSITORY" "$DOTFILES_TARGET_PATH"; then
+    log_warn "No se pudo asegurar la clonación del repositorio de dotfiles."
+fi
+
+# 8.2. Copiar versión local de install-devcontainer.sh desde el host si existe
+DOTFILES_HOST_DIR=$(dirname "$(dirname "$(readlink -f "$0")")")
+EXISTING_CONTAINER_FOR_COPY=$(docker ps -q \
+    --filter "label=devcontainer.local_folder=${RESOLVED_PWD}" \
+    2>/dev/null | head -1)
+
+if [[ -n "$EXISTING_CONTAINER_FOR_COPY" ]] && [[ -f "$DOTFILES_HOST_DIR/install-devcontainer.sh" ]]; then
+    log_info "Copiando versión local de install-devcontainer.sh al contenedor..."
+    docker cp "$DOTFILES_HOST_DIR/install-devcontainer.sh" "$EXISTING_CONTAINER_FOR_COPY:$DOTFILES_TARGET_PATH/install-devcontainer.sh"
+    
+    # Ajustar propietario y permisos
+    CONTAINER_USER=$(devcontainer exec --workspace-folder "$PWD" --config "$CONFIG_FOR_CLI" whoami 2>/dev/null | tr -d '\r\n' || echo "vscode")
+    CONTAINER_USER="${CONTAINER_USER:-vscode}"
+    docker exec "$EXISTING_CONTAINER_FOR_COPY" chown "$CONTAINER_USER" "$DOTFILES_TARGET_PATH/install-devcontainer.sh" 2>/dev/null || true
+    docker exec "$EXISTING_CONTAINER_FOR_COPY" chmod +x "$DOTFILES_TARGET_PATH/install-devcontainer.sh" 2>/dev/null || true
+fi
+
+# 8.3. Ejecutar comando de instalación y crear marcador
+if ! devcontainer exec --workspace-folder "$PWD" --config "$CONFIG_FOR_CLI" "$INSTALL_SHELL" -c '
+    set -e
+    TARGET="$1"
+    CMD="$2"
+    MARKER="$HOME/.devcontainer/.dotfilesMarker"
+    
+    if [ ! -f "$MARKER" ]; then
         if [ -n "$CMD" ]; then
             INSTALL_SCRIPT="$TARGET/$CMD"
             if [ -f "$INSTALL_SCRIPT" ]; then
@@ -474,8 +495,8 @@ if ! devcontainer exec --workspace-folder "$PWD" --config "$CONFIG_FOR_CLI" "$IN
     else
         echo -e "\e[34m[dcdev:dotfiles]\e[0m Dotfiles ya instalados (marcador encontrado)."
     fi
-' -- "$DOTFILES_REPOSITORY" "$DOTFILES_TARGET_PATH" "$DOTFILES_INSTALL_COMMAND"; then
-    log_warn "No se pudo completar la instalación de dotfiles automáticamente."
+' -- "$DOTFILES_TARGET_PATH" "$DOTFILES_INSTALL_COMMAND"; then
+    log_warn "No se pudo completar la ejecución del instalador de dotfiles automáticamente."
 fi
 
 # --- 9. ENTRADA AL CONTENEDOR (DEVCONTAINER EXEC) ---

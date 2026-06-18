@@ -235,7 +235,7 @@ export PATH="$HOME/.local/bin:$PATH"
 if command -v apt-get >/dev/null 2>&1; then
     run_sudo apt-get update -y
     # Instalamos utilidades que siempre están en los repos y son de sistema
-    local apt_packages=(git curl unzip zip jq ripgrep fzf tmux fd-find neovim tree shellcheck)
+    apt_packages=(git curl unzip zip jq ripgrep fzf tmux fd-find neovim tree shellcheck)
     run_sudo apt-get install -y "${apt_packages[@]}"
     
     # Resolver 'fd' en Debian
@@ -245,7 +245,7 @@ if command -v apt-get >/dev/null 2>&1; then
 
 elif command -v apk >/dev/null 2>&1; then
     run_sudo apk update
-    local apk_packages=(git curl unzip zip jq ripgrep fzf tmux fd neovim tree shellcheck)
+    apk_packages=(git curl unzip zip jq ripgrep fzf tmux fd neovim tree shellcheck)
     run_sudo apk add "${apk_packages[@]}"
 fi
 
