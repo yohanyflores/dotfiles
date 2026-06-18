@@ -421,9 +421,9 @@ if ! devcontainer exec --workspace-folder "$PWD" --config "$CONFIG_FOR_CLI" "$IN
     MARKER="$HOME/.devcontainer/.dotfilesMarker"
     
     # Auto-recuperación: si existe el marcador pero no está el repositorio clonado con .git,
-    # significa que la clonación anterior falló. Borramos el marcador para reintentar.
-    if [ -f "$MARKER" ] && [ ! -d "$TARGET/.git" ]; then
-        echo -e "\e[33m[dcdev:dotfiles] El marcador existe pero el repositorio no está clonado. Forzando re-instalación...\e[0m"
+    # o si falta la herramienta core (lazygit), borramos el marcador para forzar la instalación.
+    if [ -f "$MARKER" ] && { [ ! -d "$TARGET/.git" ] || [ ! -x "$HOME/.local/bin/lazygit" ]; }; then
+        echo -e "\e[33m[dcdev:dotfiles] El marcador existe pero la instalación está incompleta o falló. Forzando re-instalación...\e[0m"
         rm -f "$MARKER"
     fi
     
