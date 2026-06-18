@@ -346,13 +346,13 @@ if [[ -n "$EXISTING_CONTAINER_FOR_MARKER" ]]; then
               "/root/.devcontainer/.dotfilesMarker" 2>/dev/null || true
     ' || true
 
-    # Verificar si el contenedor ya tiene llaves SSH o un agente SSH activo
-    HAS_KEYS_OR_AGENT=false
-    if docker exec "$EXISTING_CONTAINER_FOR_MARKER" sh -c 'ssh-add -l >/dev/null 2>&1 || [ -d "$HOME/.ssh" ] && [ "$(ls -A "$HOME/.ssh" 2>/dev/null)" ]' 2>/dev/null; then
-        HAS_KEYS_OR_AGENT=true
+    # Verificar si el contenedor ya tiene un agente SSH activo y respondiendo
+    HAS_AGENT=false
+    if docker exec "$EXISTING_CONTAINER_FOR_MARKER" ssh-add -l >/dev/null 2>&1; then
+        HAS_AGENT=true
     fi
 
-    if ! $HAS_KEYS_OR_AGENT; then
+    if ! $HAS_AGENT; then
         # Detectar usuario remoto en el contenedor
         CONTAINER_USER=$(docker inspect --format '{{.Config.User}}' "$EXISTING_CONTAINER_FOR_MARKER" 2>/dev/null || echo "vscode")
         CONTAINER_USER="${CONTAINER_USER:-vscode}"
@@ -371,7 +371,7 @@ if [[ -n "$EXISTING_CONTAINER_FOR_MARKER" ]]; then
         
         # Si el host tiene llaves en ~/.ssh, copiarlas
         if [[ -d "$HOME/.ssh" ]]; then
-            log_info "El contenedor existente no tiene acceso a llaves SSH ni agente. Copiando ~/.ssh desde el host..."
+            log_info "El contenedor existente no tiene agente SSH activo. Asegurando llaves SSH (~/.ssh) en $CONTAINER_HOME/.ssh..."
             docker exec "$EXISTING_CONTAINER_FOR_MARKER" mkdir -p "$CONTAINER_HOME/.ssh" 2>/dev/null || true
             docker cp "$HOME/.ssh/." "$EXISTING_CONTAINER_FOR_MARKER:$CONTAINER_HOME/.ssh/"
             
