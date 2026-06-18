@@ -249,7 +249,7 @@ fi
 log_info "Entrando al contenedor..."
 
 # Determinar si bash está disponible en el contenedor para devcontainer exec
-if devcontainer exec --workspace-folder "$PWD" --config "$CONFIG_FOR_CLI" command -v bash >/dev/null 2>&1; then
+if devcontainer exec --workspace-folder "$PWD" --config "$CONFIG_FOR_CLI" bash -c "exit 0" >/dev/null 2>&1; then
     SHELL_CMD="bash"
 else
     SHELL_CMD="sh"
