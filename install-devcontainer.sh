@@ -67,8 +67,8 @@ install_github_tool() {
     
     # 1. Comprobar si ya existe con la versión deseada
     if command -v "$name" >/dev/null 2>&1; then
-        if "$name" --version 2>&1 | grep -F "$expected_version" >/dev/null || \
-           "$name" -v 2>&1 | grep -F "$expected_version" >/dev/null; then
+        if "$name" --version </dev/null 2>&1 | grep -F "$expected_version" >/dev/null || \
+           "$name" -v </dev/null 2>&1 | grep -F "$expected_version" >/dev/null; then
             log_info "La herramienta '$name' ya está en ~/.local/bin con la versión $expected_version. Saltando."
             return 0
         fi
