@@ -426,7 +426,9 @@ if ! devcontainer exec --workspace-folder "$PWD" --config "$CONFIG_FOR_CLI" "$IN
     # Auto-recuperación: si existe el marcador pero falta el marcador de éxito del instalador,
     # o si falta la carpeta .git, borramos el marcador para forzar la instalación.
     NEED_INSTALL=false
-    if [ ! -d "$TARGET/.git" ] || [ ! -f "$SUCCESS_MARKER" ]; then
+    if [ ! -d "$TARGET/.git" ]; then
+        NEED_INSTALL=true
+    elif [ ! -f "$SUCCESS_MARKER" ]; then
         NEED_INSTALL=true
     fi
     
