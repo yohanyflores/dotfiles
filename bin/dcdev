@@ -50,32 +50,58 @@ DCDEV_CACHE_DIR=$(readlink -f "$DCDEV_CACHE_DIR")
 log_info "Directorio de caché persistente en el host: $DCDEV_CACHE_DIR"
 
 # Intentar auto-detectar SSH_AUTH_SOCK si no está definido en el entorno heredado
+DCDEV_SSH_MODE="none"
+
 if [[ -z "${SSH_AUTH_SOCK:-}" ]]; then
+    log_info "SSH_AUTH_SOCK no heredado del entorno. Buscando agente SSH automáticamente..."
     USER_UID=$(id -u)
     if [[ -S "/run/user/${USER_UID}/keyring/ssh" ]]; then
         export SSH_AUTH_SOCK="/run/user/${USER_UID}/keyring/ssh"
+        log_info "Agente SSH detectado (gnome-keyring): $SSH_AUTH_SOCK"
     elif [[ -S "/run/user/${USER_UID}/gnupg/S.gpg-agent.ssh" ]]; then
         export SSH_AUTH_SOCK="/run/user/${USER_UID}/gnupg/S.gpg-agent.ssh"
+        log_info "Agente SSH detectado (gpg-agent): $SSH_AUTH_SOCK"
     else
         # Buscar sockets temporales del usuario actual
         TEMP_SOCKET=$(find /tmp/ssh-* -type s -user "$USER" -name "agent.*" 2>/dev/null | head -n 1 || true)
         if [[ -n "$TEMP_SOCKET" ]]; then
             export SSH_AUTH_SOCK="$TEMP_SOCKET"
+            log_info "Agente SSH detectado (socket temporal): $SSH_AUTH_SOCK"
+        else
+            log_info "No se encontró ningún socket de agente SSH en rutas conocidas."
         fi
     fi
+else
+    log_info "SSH_AUTH_SOCK heredado del entorno: $SSH_AUTH_SOCK"
 fi
 
 if [[ -n "${SSH_AUTH_SOCK:-}" ]]; then
-    # Verificar si el agente tiene identidades cargadas
-    if ! ssh-add -l >/dev/null 2>&1; then
-        log_warn "SSH_AUTH_SOCK detectado en '${SSH_AUTH_SOCK}', pero no hay llaves SSH cargadas en el agente (ejecuta 'ssh-add')."
+    # Verificar que el socket realmente existe y el agente responde
+    if [[ -S "$SSH_AUTH_SOCK" ]] && ssh-add -l >/dev/null 2>&1; then
+        DCDEV_SSH_MODE="agent"
+        log_info "Agente SSH activo con llaves cargadas. Se usará forwarding del agente."
+    elif [[ -S "$SSH_AUTH_SOCK" ]]; then
+        log_warn "SSH_AUTH_SOCK apunta a '$SSH_AUTH_SOCK' pero no hay llaves cargadas (ejecuta 'ssh-add')."
+        # El socket existe pero sin llaves — intentar fallback a ~/.ssh
+        if [[ -d "$HOME/.ssh" ]] && ls "$HOME/.ssh"/id_* >/dev/null 2>&1; then
+            DCDEV_SSH_MODE="keys"
+            log_info "Fallback: se montará ~/.ssh (solo lectura) en el contenedor."
+        fi
+    else
+        log_warn "SSH_AUTH_SOCK='$SSH_AUTH_SOCK' pero el socket no existe."
     fi
-else
-    if [[ "$DOTFILES_REPOSITORY" =~ ^(git@|ssh://) ]]; then
-        log_warn "No se detectó ningún agente SSH activo en el host (SSH_AUTH_SOCK vacío)."
-        log_warn "Como tu repositorio de dotfiles usa SSH, la clonación podría fallar."
-        log_warn "Sugerencia: Ejecuta 'eval (ssh-agent -c)' (en fish) o 'eval \$(ssh-agent)' (en bash/zsh) y añade tu llave con 'ssh-add'."
-    fi
+fi
+
+# Si no hay agente, intentar montar ~/.ssh como último recurso
+if [[ "$DCDEV_SSH_MODE" == "none" ]] && [[ -d "$HOME/.ssh" ]] && ls "$HOME/.ssh"/id_* >/dev/null 2>&1; then
+    DCDEV_SSH_MODE="keys"
+    log_info "Sin agente SSH, pero se encontraron llaves en ~/.ssh. Se montarán (solo lectura) en el contenedor."
+fi
+
+if [[ "$DCDEV_SSH_MODE" == "none" ]] && [[ "$DOTFILES_REPOSITORY" =~ ^(git@|ssh://) ]]; then
+    log_warn "No se detectó agente SSH ni llaves en ~/.ssh."
+    log_warn "Como tu repositorio de dotfiles usa SSH, la clonación FALLARÁ."
+    log_warn "Sugerencia: Ejecuta 'eval (ssh-agent -c)' (en fish) o 'eval \$(ssh-agent)' (en bash/zsh) y añade tu llave con 'ssh-add'."
 fi
 
 # --- 3. DETECCIÓN DE CONTENEDOR EXISTENTE ---
@@ -256,6 +282,8 @@ try {
   const configFile = process.argv[1];
   const overrideFile = process.argv[2];
   const cacheDir = process.argv[3];
+  const sshMode = process.argv[4] || "none";
+  const homeDir = process.argv[5] || "";
   const sshAuthSock = process.env.SSH_AUTH_SOCK;
   const githubToken = process.env.GITHUB_TOKEN;
 
@@ -271,10 +299,14 @@ try {
     config.remoteEnv = {};
   }
 
-  // Soporte de SSH Agent
-  if (sshAuthSock) {
+  // Soporte de SSH según el modo detectado
+  if (sshMode === "agent" && sshAuthSock) {
+    // Modo preferido: forwarding del agente SSH via socket
     config.mounts.push("source=${localEnv:SSH_AUTH_SOCK},target=/ssh-agent,type=bind");
     config.remoteEnv.SSH_AUTH_SOCK = "/ssh-agent";
+  } else if (sshMode === "keys" && homeDir) {
+    // Fallback: montar el directorio ~/.ssh completo (solo lectura)
+    config.mounts.push(`source=${homeDir}/.ssh,target=/home/vscode/.ssh,type=bind,readonly`);
   }
 
   // Soporte de caché de herramientas
@@ -293,7 +325,7 @@ try {
   console.error("Fallo al generar el archivo de override fusionado:", e.message);
   process.exit(1);
 }
-' "$CONFIG" "$OVERRIDE_FILE" "$DCDEV_CACHE_DIR"
+' "$CONFIG" "$OVERRIDE_FILE" "$DCDEV_CACHE_DIR" "$DCDEV_SSH_MODE" "$HOME"
 
 log_info "Override JSON generado ($OVERRIDE_FILE_FOR_CLI):"
 cat "$OVERRIDE_FILE"
