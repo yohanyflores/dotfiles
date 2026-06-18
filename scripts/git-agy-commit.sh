@@ -1,115 +1,158 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # Script: git-agy-commit.sh
-# Descripción: Wrapper interactivo profesional para validar, editar o cancelar
-#              el mensaje de commit generado por agy (AI).
+# Descripción: Genera un mensaje de commit con AI (agy) y lo presenta en un
+#              editor interactivo para aceptar, editar o cancelar.
+#
+# Flujo:  Ctrl+D = aceptar/guardar  |  Ctrl+C = cancelar  |  Edita libremente
 # ==============================================================================
 
 set -euo pipefail
 
-# Colores para salida
-log_info() { echo -e "\e[34m[dcdev:commit]\e[0m $*"; }
-log_warn() { echo -e "\e[33m[dcdev:commit]\e[0m $*"; }
-log_err()  { echo -e "\e[31m[dcdev:commit] ERROR:\e[0m $*" >&2; }
+# --- Helpers ---
+HAS_GUM=false
+command -v gum >/dev/null 2>&1 && HAS_GUM=true
 
-MSG_FILE="/tmp/agy_commit_msg"
-
-# 1. Validar que existan cambios staged
-if git diff --quiet --cached; then
-    log_err "No hay cambios preparados (staged) para hacer commit."
-    read -r -p "Presiona Enter para continuar..." _
-    exit 1
-fi
-
-# 2. Generar el mensaje con agy
-log_info "Generando mensaje de commit con agy..."
-if ! git diff --staged | agy --print "Genera un mensaje de commit conciso para estos cambios. Devuelve ÚNICAMENTE el mensaje de commit crudo, sin formato markdown, sin bloques de código, sin comillas y sin explicaciones adicionales. Sigue el formato de Conventional Commits." > "$MSG_FILE" 2>/dev/null; then
-    log_err "Fallo al generar el mensaje con agy."
-    read -r -p "Presiona Enter para continuar..." _
-    exit 1
-fi
-
-# 3. Validar que el archivo no esté vacío
-if [[ ! -s "$MSG_FILE" ]]; then
-    log_err "El mensaje autogenerado por agy está vacío."
-    read -r -p "Presiona Enter para continuar..." _
-    exit 1
-fi
-
-# 4. Flujo interactivo profesional
-while true; do
-    echo -e "\n\e[32m--- MENSAJE PROPUESTO POR LA AI ---\e[0m"
-    cat "$MSG_FILE"
-    echo -e "\e[32m-----------------------------------\e[0m\n"
-    
-    # Intentar usar gum si está disponible para un selector interactivo espectacular
-    if command -v gum >/dev/null 2>&1; then
-        CHOICE=$(gum choose "Aceptar y hacer commit" "Editar mensaje y hacer commit" "Cancelar y abortar" --header="Selecciona una acción:")
-        case "$CHOICE" in
-            "Aceptar y hacer commit") OPT="a" ;;
-            "Editar mensaje y hacer commit") OPT="e" ;;
-            *) OPT="c" ;;
-        esac
+styled_header() {
+    if $HAS_GUM; then
+        gum style \
+            --foreground="#a78bfa" \
+            --border="rounded" \
+            --border-foreground="#7c3aed" \
+            --padding="0 2" \
+            --margin="1 0 0 0" \
+            --bold \
+            "$@"
     else
-        echo -e "Opciones:"
-        echo -e "  [a] Aceptar y hacer commit directamente"
-        echo -e "  [e] Editar el mensaje y hacer commit"
-        echo -e "  [c] Cancelar el commit y abortar"
-        echo -n "Selecciona una opción [a/e/c]: "
-        
-        # Asegurar que leemos desde la terminal real
-        read -r OPT < /dev/tty
+        echo -e "\n\e[35;1m  $*  \e[0m"
     fi
-    
+}
+
+styled_info() {
+    if $HAS_GUM; then
+        gum style --foreground="#38bdf8" --italic " $*"
+    else
+        echo -e "\e[34m $*\e[0m"
+    fi
+}
+
+styled_ok() {
+    if $HAS_GUM; then
+        gum style --foreground="#4ade80" --bold " ✔ $*"
+    else
+        echo -e "\e[32m ✔ $*\e[0m"
+    fi
+}
+
+styled_warn() {
+    if $HAS_GUM; then
+        gum style --foreground="#fbbf24" --bold " ✖ $*"
+    else
+        echo -e "\e[33m ✖ $*\e[0m"
+    fi
+}
+
+styled_err() {
+    if $HAS_GUM; then
+        gum style --foreground="#f87171" --bold " ✖ $*" >&2
+    else
+        echo -e "\e[31m ✖ $*\e[0m" >&2
+    fi
+}
+
+# --- 1. Validar que existan cambios staged ---
+if git diff --quiet --cached; then
+    styled_err "No hay cambios en stage para hacer commit."
+    read -r -p "  Presiona Enter para volver..." _
+    exit 1
+fi
+
+# --- 2. Generar el mensaje con agy ---
+styled_header "⚡ Generando commit con AI..."
+
+set +e
+AI_MSG=$(git diff --staged | agy --print "Genera un mensaje de commit conciso para estos cambios. Devuelve ÚNICAMENTE el mensaje de commit crudo, sin formato markdown, sin bloques de código, sin comillas y sin explicaciones adicionales. Sigue el formato de Conventional Commits en español." 2>/dev/null)
+AGY_STATUS=$?
+set -e
+
+if [[ $AGY_STATUS -ne 0 ]] || [[ -z "${AI_MSG// /}" ]]; then
+    styled_err "Fallo al generar el mensaje con agy."
+    read -r -p "  Presiona Enter para volver..." _
+    exit 1
+fi
+
+# --- 3. Presentar el editor interactivo ---
+if $HAS_GUM; then
+    # ── Flujo con gum: un solo paso ──
+    styled_header "✏️  Revisa el mensaje — edítalo si quieres"
+    styled_info "Ctrl+D → aceptar y hacer commit  •  Ctrl+C → cancelar"
+    echo ""
+
+    set +e
+    FINAL_MSG=$(gum write \
+        --value "$AI_MSG" \
+        --width 80 \
+        --height 10 \
+        --placeholder "Escribe tu mensaje de commit..." \
+        --char-limit 500 \
+        --show-line-numbers \
+        --header "  COMMIT MESSAGE" \
+        --header.foreground="#a78bfa" \
+        --header.bold \
+        --cursor.foreground="#7c3aed" \
+        --prompt.foreground="#7c3aed" \
+    )
+    GUM_EXIT=$?
+    set -e
+
+    if [[ $GUM_EXIT -ne 0 ]]; then
+        echo ""
+        styled_warn "Commit cancelado."
+        read -r -p "  Presiona Enter para volver..." _
+        exit 0
+    fi
+else
+    # ── Flujo sin gum: mostrar + preguntar ──
+    echo ""
+    echo -e "\e[35;1m┌─ MENSAJE PROPUESTO ─────────────────────────────┐\e[0m"
+    echo "$AI_MSG" | sed 's/^/\x1b[0m  │ /'
+    echo -e "\e[35;1m└─────────────────────────────────────────────────┘\e[0m"
+    echo ""
+    echo -e "  \e[36m[a]\e[0m Aceptar   \e[36m[e]\e[0m Editar   \e[36m[c]\e[0m Cancelar"
+    echo -n "  > "
+    read -r OPT < /dev/tty
+
     case "${OPT,,}" in
-        a|y)
-            log_info "Haciendo commit..."
-            git commit -F "$MSG_FILE"
-            break
+        a|y|"")
+            FINAL_MSG="$AI_MSG"
             ;;
         e)
-            if command -v gum >/dev/null 2>&1; then
-                log_info "Abriendo editor interactivo gum (Ctrl+D para guardar, Ctrl+C para cancelar)..."
-                CURRENT_MSG=$(cat "$MSG_FILE")
-                
-                # Desactivar temporalmente set -e para capturar el código de salida de gum write
-                set +e
-                NEW_MSG=$(gum write --value "$CURRENT_MSG" --placeholder "Escribe el mensaje de commit..." --width=80)
-                GUM_STATUS=$?
-                set -e
-                
-                if [ $GUM_STATUS -eq 0 ]; then
-                    echo "$NEW_MSG" > "$MSG_FILE"
-                else
-                    log_warn "Edición cancelada por el usuario."
-                    continue
-                fi
-            else
-                # Determinar editor del sistema o usar vim/nano por defecto
-                EDITOR_TO_USE="${VISUAL:-${EDITOR:-vim}}"
-                log_info "Abriendo editor ($EDITOR_TO_USE)..."
-                "$EDITOR_TO_USE" "$MSG_FILE" < /dev/tty > /dev/tty
-            fi
-            
-            # Si se vacía el archivo en la edición, se aborta
-            if [[ ! -s "$MSG_FILE" ]]; then
-                log_warn "Mensaje vacío tras la edición. Commit abortado."
-                break
-            fi
-            
-            log_info "Haciendo commit con el mensaje editado..."
-            git commit -F "$MSG_FILE"
-            break
-            ;;
-        c|q)
-            log_warn "Commit cancelado por el usuario."
-            break
+            MSG_FILE=$(mktemp /tmp/agy_commit_XXXXXX)
+            echo "$AI_MSG" > "$MSG_FILE"
+            EDITOR_TO_USE="${VISUAL:-${EDITOR:-vim}}"
+            "$EDITOR_TO_USE" "$MSG_FILE" < /dev/tty > /dev/tty
+            FINAL_MSG=$(cat "$MSG_FILE")
+            rm -f "$MSG_FILE"
             ;;
         *)
-            log_warn "Opción inválida."
+            styled_warn "Commit cancelado."
+            read -r -p "  Presiona Enter para volver..." _
+            exit 0
             ;;
     esac
-done
+fi
 
-# Limpieza silenciosa
-rm -f "$MSG_FILE"
+# --- 4. Validar y ejecutar el commit ---
+FINAL_MSG=$(echo "$FINAL_MSG" | sed '/^[[:space:]]*$/d')
+
+if [[ -z "${FINAL_MSG// /}" ]]; then
+    styled_warn "Mensaje vacío. Commit abortado."
+    read -r -p "  Presiona Enter para volver..." _
+    exit 0
+fi
+
+git commit -m "$FINAL_MSG"
+
+echo ""
+styled_ok "Commit realizado con éxito"
+read -r -p "  Presiona Enter para volver..." _
