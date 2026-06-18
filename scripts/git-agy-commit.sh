@@ -4,7 +4,7 @@
 # Descripción: Genera un mensaje de commit con AI (agy) y lo presenta en un
 #              editor interactivo para aceptar, editar o cancelar.
 #
-# Flujo:  Enter = aceptar  |  Ctrl+C = cancelar  |  Edita libremente
+# Flujo:  Ctrl+D = aceptar  |  Ctrl+C = cancelar  |  Enter = nueva línea
 # ==============================================================================
 
 set -euo pipefail
@@ -83,7 +83,7 @@ fi
 if $HAS_GUM; then
     # ── Flujo con gum: un solo paso ──
     styled_header "✏️  Revisa el mensaje — edítalo si quieres"
-    styled_info "Enter → aceptar y hacer commit  •  Ctrl+C → cancelar"
+    styled_info "Ctrl+D → aceptar y hacer commit  •  Ctrl+C → cancelar"
     echo ""
 
     set +e
@@ -91,14 +91,19 @@ if $HAS_GUM; then
         --value "$AI_MSG" \
         --width 80 \
         --height 10 \
-        --placeholder "Escribe tu mensaje de commit..." \
-        --char-limit 500 \
+        --show-help \
         --show-line-numbers \
-        --header "  COMMIT MESSAGE" \
-        --header.foreground="#a78bfa" \
-        --header.bold \
-        --cursor.foreground="#7c3aed" \
-        --prompt.foreground="#7c3aed" \
+        --show-cursor-line \
+        --header "  ✨ COMMIT MESSAGE" \
+        --header.foreground "#a78bfa" \
+        --placeholder "Escribe tu mensaje de commit..." \
+        --placeholder.foreground "#6b7280" \
+        --prompt.foreground "#7c3aed" \
+        --cursor.foreground "#7c3aed" \
+        --cursor-line.foreground "#e0e7ff" \
+        --cursor-line-number.foreground "#a78bfa" \
+        --line-number.foreground "#4b5563" \
+        --base.foreground "#d1d5db" \
     )
     GUM_EXIT=$?
     set -e
