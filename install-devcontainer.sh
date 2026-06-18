@@ -54,7 +54,7 @@ log_info "Directorio de caché configurado en: $CACHE_DIR"
 
 # --- DETECCIÓN DE PERFIL ---
 # Opciones: core (default), full (core + nice + experimental)
-DOTFILES_PROFILE="${DOTFILES_PROFILE:-core}"
+DOTFILES_PROFILE="${DOTFILES_PROFILE:-full}"
 log_info "Perfil de instalación seleccionado: $DOTFILES_PROFILE"
 
 # --- GITHUB DOWNLOAD WITH CACHE AND VERSION CONTROL ---
