@@ -25,6 +25,10 @@ log_info() {
     echo -e "\e[34m[dcdev:INFO]\e[0m $*"
 }
 
+log_warn() {
+    echo -e "\e[33m[dcdev:WARN]\e[0m $*" >&2
+}
+
 log_error() {
     echo -e "\e[31m[dcdev:ERROR]\e[0m $*" >&2
 }
@@ -37,13 +41,42 @@ for cmd in devcontainer docker jq; do
     fi
 done
 
-# --- 2. CONFIGURACIÓN DE CACHÉ EN EL HOST ---
+# --- 2. CONFIGURACIÓN DE CACHÉ Y SSH AGENT EN EL HOST ---
 if [[ "$DCDEV_CACHE_DIR" == "~/"* ]]; then
     DCDEV_CACHE_DIR="${HOME}/${DCDEV_CACHE_DIR#~/}"
 fi
 mkdir -p "$DCDEV_CACHE_DIR"
 DCDEV_CACHE_DIR=$(readlink -f "$DCDEV_CACHE_DIR")
 log_info "Directorio de caché persistente en el host: $DCDEV_CACHE_DIR"
+
+# Intentar auto-detectar SSH_AUTH_SOCK si no está definido en el entorno heredado
+if [[ -z "${SSH_AUTH_SOCK:-}" ]]; then
+    USER_UID=$(id -u)
+    if [[ -S "/run/user/${USER_UID}/keyring/ssh" ]]; then
+        export SSH_AUTH_SOCK="/run/user/${USER_UID}/keyring/ssh"
+    elif [[ -S "/run/user/${USER_UID}/gnupg/S.gpg-agent.ssh" ]]; then
+        export SSH_AUTH_SOCK="/run/user/${USER_UID}/gnupg/S.gpg-agent.ssh"
+    else
+        # Buscar sockets temporales del usuario actual
+        TEMP_SOCKET=$(find /tmp/ssh-* -type s -user "$USER" -name "agent.*" 2>/dev/null | head -n 1 || true)
+        if [[ -n "$TEMP_SOCKET" ]]; then
+            export SSH_AUTH_SOCK="$TEMP_SOCKET"
+        fi
+    fi
+fi
+
+if [[ -n "${SSH_AUTH_SOCK:-}" ]]; then
+    # Verificar si el agente tiene identidades cargadas
+    if ! ssh-add -l >/dev/null 2>&1; then
+        log_warn "SSH_AUTH_SOCK detectado en '${SSH_AUTH_SOCK}', pero no hay llaves SSH cargadas en el agente (ejecuta 'ssh-add')."
+    fi
+else
+    if [[ "$DOTFILES_REPOSITORY" =~ ^(git@|ssh://) ]]; then
+        log_warn "No se detectó ningún agente SSH activo en el host (SSH_AUTH_SOCK vacío)."
+        log_warn "Como tu repositorio de dotfiles usa SSH, la clonación podría fallar."
+        log_warn "Sugerencia: Ejecuta 'eval (ssh-agent -c)' (en fish) o 'eval \$(ssh-agent)' (en bash/zsh) y añade tu llave con 'ssh-add'."
+    fi
+fi
 
 # --- 3. DETECCIÓN DE CONTENEDOR EXISTENTE ---
 RESOLVED_PWD=$(readlink -f "$PWD")
