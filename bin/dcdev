@@ -353,21 +353,12 @@ if [[ -n "$EXISTING_CONTAINER_FOR_MARKER" ]]; then
     fi
 
     if ! $HAS_AGENT; then
-        # Detectar usuario remoto en el contenedor
-        CONTAINER_USER=$(docker inspect --format '{{.Config.User}}' "$EXISTING_CONTAINER_FOR_MARKER" 2>/dev/null || echo "vscode")
+        # Detectar usuario remoto y home en el contenedor usando devcontainer exec (es el método más preciso)
+        CONTAINER_USER=$(devcontainer exec --workspace-folder "$PWD" --config "$CONFIG_FOR_CLI" whoami 2>/dev/null | tr -d '\r\n' || echo "vscode")
         CONTAINER_USER="${CONTAINER_USER:-vscode}"
         
-        # Obtener el home de ese usuario
-        CONTAINER_HOME=$(docker exec "$EXISTING_CONTAINER_FOR_MARKER" getent passwd "$CONTAINER_USER" | cut -d: -f6 2>/dev/null || true)
-        if [[ -z "$CONTAINER_HOME" ]]; then
-            if docker exec "$EXISTING_CONTAINER_FOR_MARKER" test -d "/home/vscode" 2>/dev/null; then
-                CONTAINER_HOME="/home/vscode"
-            elif docker exec "$EXISTING_CONTAINER_FOR_MARKER" test -d "/home/node" 2>/dev/null; then
-                CONTAINER_HOME="/home/node"
-            else
-                CONTAINER_HOME="/root"
-            fi
-        fi
+        CONTAINER_HOME=$(devcontainer exec --workspace-folder "$PWD" --config "$CONFIG_FOR_CLI" sh -c 'echo "$HOME"' 2>/dev/null | tr -d '\r\n' || echo "/home/vscode")
+        CONTAINER_HOME="${CONTAINER_HOME:-/home/$CONTAINER_USER}"
         
         # Si el host tiene llaves en ~/.ssh, copiarlas
         if [[ -d "$HOME/.ssh" ]]; then
@@ -429,18 +420,31 @@ if ! devcontainer exec --workspace-folder "$PWD" --config "$CONFIG_FOR_CLI" "$IN
     CMD="$3"
     MARKER="$HOME/.devcontainer/.dotfilesMarker"
     
+    # Auto-recuperación: si existe el marcador pero no está el repositorio clonado con .git,
+    # significa que la clonación anterior falló. Borramos el marcador para reintentar de verdad.
+    if [ -f "$MARKER" ] && [ ! -d "$TARGET/.git" ]; then
+        echo -e "\e[33m[dcdev:dotfiles] El marcador existe pero el repositorio no está clonado (.git no encontrado). Forzando re-instalación...\e[0m"
+        rm -f "$MARKER"
+    fi
+    
     if [ ! -f "$MARKER" ]; then
         echo -e "\e[34m[dcdev:dotfiles]\e[0m No se encontró el marcador. Iniciando instalación de dotfiles..."
         
-        # Clonar si no existe
-        if [ ! -d "$TARGET" ]; then
+        # Clonar si no existe la carpeta o si no está inicializada con .git
+        if [ ! -d "$TARGET/.git" ]; then
+            # Si existía la carpeta sin .git (por ejemplo, vacía o fallida), la borramos primero
+            if [ -d "$TARGET" ]; then
+                echo -e "\e[33m[dcdev:dotfiles] Limpiando directorio de clonación fallido previo en $TARGET...\e[0m"
+                rm -rf "$TARGET"
+            fi
+            
             echo -e "\e[34m[dcdev:dotfiles]\e[0m Clonando $REPO en $TARGET..."
             if ! git clone "$REPO" "$TARGET"; then
                 echo -e "\e[31m[dcdev:dotfiles] ERROR: Falló la clonación del repositorio de dotfiles.\e[0m" >&2
                 exit 1
             fi
         else
-            echo -e "\e[34m[dcdev:dotfiles]\e[0m El directorio $TARGET ya existe."
+            echo -e "\e[34m[dcdev:dotfiles]\e[0m El directorio $TARGET ya está clonado (.git encontrado)."
         fi
         
         # Ejecutar comando de instalación
