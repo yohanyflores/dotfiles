@@ -452,21 +452,25 @@ if ! devcontainer exec --workspace-folder "$PWD" --config "$CONFIG_FOR_CLI" "$IN
     log_warn "No se pudo asegurar la clonación del repositorio de dotfiles."
 fi
 
-# 8.2. Copiar versión local de install-devcontainer.sh desde el host si existe
+# 8.2. Sincronizar directorio de dotfiles local del host al contenedor si existe
 DOTFILES_HOST_DIR=$(dirname "$(dirname "$(readlink -f "$0")")")
 EXISTING_CONTAINER_FOR_COPY=$(docker ps -q \
     --filter "label=devcontainer.local_folder=${RESOLVED_PWD}" \
     2>/dev/null | head -1)
 
-if [[ -n "$EXISTING_CONTAINER_FOR_COPY" ]] && [[ -f "$DOTFILES_HOST_DIR/install-devcontainer.sh" ]]; then
-    log_info "Copiando versión local de install-devcontainer.sh al contenedor..."
-    docker cp "$DOTFILES_HOST_DIR/install-devcontainer.sh" "$EXISTING_CONTAINER_FOR_COPY:$DOTFILES_TARGET_PATH/install-devcontainer.sh"
+if [[ -n "$EXISTING_CONTAINER_FOR_COPY" ]] && [[ -d "$DOTFILES_HOST_DIR" ]]; then
+    log_info "Sincronizando dotfiles locales del host al contenedor ($DOTFILES_TARGET_PATH)..."
+    docker exec "$EXISTING_CONTAINER_FOR_COPY" mkdir -p "$DOTFILES_TARGET_PATH" 2>/dev/null || true
+    # Copiar todo el contenido del repositorio de dotfiles del host al contenedor
+    docker cp "$DOTFILES_HOST_DIR/." "$EXISTING_CONTAINER_FOR_COPY:$DOTFILES_TARGET_PATH/"
     
     # Ajustar propietario y permisos
     CONTAINER_USER=$(devcontainer exec --workspace-folder "$PWD" --config "$CONFIG_FOR_CLI" whoami 2>/dev/null | tr -d '\r\n' || echo "vscode")
     CONTAINER_USER="${CONTAINER_USER:-vscode}"
-    docker exec "$EXISTING_CONTAINER_FOR_COPY" chown "$CONTAINER_USER" "$DOTFILES_TARGET_PATH/install-devcontainer.sh" 2>/dev/null || true
-    docker exec "$EXISTING_CONTAINER_FOR_COPY" chmod +x "$DOTFILES_TARGET_PATH/install-devcontainer.sh" 2>/dev/null || true
+    docker exec "$EXISTING_CONTAINER_FOR_COPY" chown -R "$CONTAINER_USER" "$DOTFILES_TARGET_PATH" 2>/dev/null || true
+    if docker exec "$EXISTING_CONTAINER_FOR_COPY" test -f "$DOTFILES_TARGET_PATH/install-devcontainer.sh" 2>/dev/null; then
+        docker exec "$EXISTING_CONTAINER_FOR_COPY" chmod +x "$DOTFILES_TARGET_PATH/install-devcontainer.sh" 2>/dev/null || true
+    fi
 fi
 
 # 8.3. Ejecutar comando de instalación y crear marcador
