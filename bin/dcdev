@@ -45,7 +45,59 @@ mkdir -p "$DCDEV_CACHE_DIR"
 DCDEV_CACHE_DIR=$(readlink -f "$DCDEV_CACHE_DIR")
 log_info "Directorio de caché persistente en el host: $DCDEV_CACHE_DIR"
 
-# --- 3. DETECCIÓN INTERACTIVA DEL ARCHIVO DE CONFIGURACIÓN ---
+# --- 3. DETECCIÓN DE CONTENEDOR EXISTENTE ---
+RESOLVED_PWD=$(readlink -f "$PWD")
+
+# Buscar contenedor corriendo para este workspace usando las labels del CLI
+EXISTING_CONTAINER=$(docker ps -q \
+    --filter "label=devcontainer.local_folder=${RESOLVED_PWD}" \
+    2>/dev/null | head -1)
+
+if [[ -n "$EXISTING_CONTAINER" ]]; then
+    CONTAINER_NAME=$(docker inspect --format '{{.Name}}' "$EXISTING_CONTAINER" | sed 's|^/||')
+    EXISTING_CONFIG=$(docker inspect --format '{{index .Config.Labels "devcontainer.config_file"}}' "$EXISTING_CONTAINER" 2>/dev/null || true)
+
+    log_info "Contenedor existente detectado: $CONTAINER_NAME ($EXISTING_CONTAINER)"
+
+    # Preguntar al usuario
+    if command -v gum >/dev/null 2>&1; then
+        CONNECT_DIRECT=$(gum confirm "¿Conectarse directamente al contenedor existente?" && echo "s" || echo "n")
+    else
+        read -r -p "[dcdev] ¿Conectarse directamente al contenedor existente? [S/n]: " CONNECT_DIRECT
+        CONNECT_DIRECT="${CONNECT_DIRECT:-s}"
+    fi
+
+    if [[ "${CONNECT_DIRECT,,}" == "s" || "${CONNECT_DIRECT,,}" == "y" || -z "$CONNECT_DIRECT" ]]; then
+        # Determinar config para exec
+        CONFIG_FOR_CLI=""
+        if [[ -n "$EXISTING_CONFIG" ]]; then
+            CONFIG_FOR_CLI="$EXISTING_CONFIG"
+            if [[ "$EXISTING_CONFIG" == "$RESOLVED_PWD/"* ]]; then
+                CONFIG_FOR_CLI="${EXISTING_CONFIG#$RESOLVED_PWD/}"
+            fi
+        fi
+
+        EXEC_OPTS=("--workspace-folder" "$PWD")
+        if [[ -n "$CONFIG_FOR_CLI" ]]; then
+            EXEC_OPTS+=("--config" "$CONFIG_FOR_CLI")
+        fi
+
+        # Determinar si bash está disponible en el contenedor para devcontainer exec
+        if devcontainer exec "${EXEC_OPTS[@]}" bash -c "exit 0" >/dev/null 2>&1; then
+            SHELL_CMD="bash"
+        else
+            SHELL_CMD="sh"
+        fi
+
+        # Saltar directamente a la conexión
+        log_info "Conectando directamente al contenedor existente..."
+        log_info "Ejecutando comando CLI de conexión:"
+        echo "devcontainer exec ${EXEC_OPTS[*]} \"$SHELL_CMD\""
+        exec devcontainer exec "${EXEC_OPTS[@]}" "$SHELL_CMD"
+    fi
+fi
+
+# --- 4. DETECCIÓN INTERACTIVA DEL ARCHIVO DE CONFIGURACIÓN ---
 if [[ -n "${DEVCONTAINER_CONFIG:-}" ]]; then
     CONFIG="$DEVCONTAINER_CONFIG"
     if [[ ! -f "$CONFIG" ]]; then
@@ -94,7 +146,6 @@ else
 fi
 
 # Resolver rutas físicas absolutas para evitar discrepancias por enlaces simbólicos en el host (ej. /home/yohany/Develop -> /mnt/SSD-Linux/...)
-RESOLVED_PWD=$(readlink -f "$PWD")
 CONFIG=$(readlink -f "$CONFIG")
 
 # Convertir a ruta relativa respecto al espacio de trabajo físico para evitar bugs de resolución en el CLI
@@ -105,7 +156,7 @@ fi
 
 log_info "Usando archivo de configuración seleccionado: $CONFIG (para el CLI: $CONFIG_FOR_CLI)"
 
-# --- 4. CONSTRUCCIÓN DINÁMICA DEL OVERRIDE (SSH Y CACHÉ) ---
+# --- 5. CONSTRUCCIÓN DINÁMICA DEL OVERRIDE (SSH Y CACHÉ) ---
 log_info "Generando override dinámico de configuración..."
 
 # Determinar la carpeta de la configuración para colocar el override en el mismo directorio
@@ -214,7 +265,24 @@ try {
 log_info "Override JSON generado ($OVERRIDE_FILE_FOR_CLI):"
 cat "$OVERRIDE_FILE"
 
-# --- 5. LEVANTAR CONTENEDOR CON @DEVCONTAINERS/CLI ---
+# --- 6. ELIMINAR MARCADOR DE DOTFILES DE CONTENEDOR EXISTENTE ---
+# Buscar contenedor corriendo para este workspace usando las labels del CLI
+EXISTING_CONTAINER_FOR_MARKER=$(docker ps -q \
+    --filter "label=devcontainer.local_folder=${RESOLVED_PWD}" \
+    2>/dev/null | head -1)
+
+if [[ -n "$EXISTING_CONTAINER_FOR_MARKER" ]]; then
+    log_info "Eliminando marcador de dotfiles del contenedor existente para forzar la instalación..."
+    docker exec "$EXISTING_CONTAINER_FOR_MARKER" sh -c '
+        # Eliminar el marcador en el HOME actual y en rutas comunes
+        rm -f "$HOME/.devcontainer/.dotfilesMarker" \
+              "/home/vscode/.devcontainer/.dotfilesMarker" \
+              "/home/node/.devcontainer/.dotfilesMarker" \
+              "/root/.devcontainer/.dotfilesMarker" 2>/dev/null || true
+    ' || true
+fi
+
+# --- 7. LEVANTAR CONTENEDOR CON @DEVCONTAINERS/CLI ---
 log_info "Levantando el Dev Container..."
 log_info "Config: $CONFIG_FOR_CLI"
 
@@ -245,7 +313,7 @@ if ! devcontainer up \
     exit 1
 fi
 
-# --- 6. ENTRADA AL CONTENEDOR (DEVCONTAINER EXEC) ---
+# --- 8. ENTRADA AL CONTENEDOR (DEVCONTAINER EXEC) ---
 log_info "Entrando al contenedor..."
 
 # Determinar si bash está disponible en el contenedor para devcontainer exec
