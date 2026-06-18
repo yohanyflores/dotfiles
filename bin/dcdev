@@ -330,7 +330,7 @@ try {
 log_info "Override JSON generado ($OVERRIDE_FILE_FOR_CLI):"
 cat "$OVERRIDE_FILE"
 
-# --- 6. ELIMINAR MARCADOR DE DOTFILES DE CONTENEDOR EXISTENTE ---
+# --- 6. ELIMINAR MARCADOR DE DOTFILES Y ASEGURAR LLAVES SSH EN CONTENEDOR EXISTENTE ---
 # Buscar contenedor corriendo para este workspace usando las labels del CLI
 EXISTING_CONTAINER_FOR_MARKER=$(docker ps -q \
     --filter "label=devcontainer.local_folder=${RESOLVED_PWD}" \
@@ -345,6 +345,42 @@ if [[ -n "$EXISTING_CONTAINER_FOR_MARKER" ]]; then
               "/home/node/.devcontainer/.dotfilesMarker" \
               "/root/.devcontainer/.dotfilesMarker" 2>/dev/null || true
     ' || true
+
+    # Verificar si el contenedor ya tiene llaves SSH o un agente SSH activo
+    HAS_KEYS_OR_AGENT=false
+    if docker exec "$EXISTING_CONTAINER_FOR_MARKER" sh -c 'ssh-add -l >/dev/null 2>&1 || [ -d "$HOME/.ssh" ] && [ "$(ls -A "$HOME/.ssh" 2>/dev/null)" ]' 2>/dev/null; then
+        HAS_KEYS_OR_AGENT=true
+    fi
+
+    if ! $HAS_KEYS_OR_AGENT; then
+        # Detectar usuario remoto en el contenedor
+        CONTAINER_USER=$(docker inspect --format '{{.Config.User}}' "$EXISTING_CONTAINER_FOR_MARKER" 2>/dev/null || echo "vscode")
+        CONTAINER_USER="${CONTAINER_USER:-vscode}"
+        
+        # Obtener el home de ese usuario
+        CONTAINER_HOME=$(docker exec "$EXISTING_CONTAINER_FOR_MARKER" getent passwd "$CONTAINER_USER" | cut -d: -f6 2>/dev/null || true)
+        if [[ -z "$CONTAINER_HOME" ]]; then
+            if docker exec "$EXISTING_CONTAINER_FOR_MARKER" test -d "/home/vscode" 2>/dev/null; then
+                CONTAINER_HOME="/home/vscode"
+            elif docker exec "$EXISTING_CONTAINER_FOR_MARKER" test -d "/home/node" 2>/dev/null; then
+                CONTAINER_HOME="/home/node"
+            else
+                CONTAINER_HOME="/root"
+            fi
+        fi
+        
+        # Si el host tiene llaves en ~/.ssh, copiarlas
+        if [[ -d "$HOME/.ssh" ]]; then
+            log_info "El contenedor existente no tiene acceso a llaves SSH ni agente. Copiando ~/.ssh desde el host..."
+            docker exec "$EXISTING_CONTAINER_FOR_MARKER" mkdir -p "$CONTAINER_HOME/.ssh" 2>/dev/null || true
+            docker cp "$HOME/.ssh/." "$EXISTING_CONTAINER_FOR_MARKER:$CONTAINER_HOME/.ssh/"
+            
+            # Ajustar permisos y propietario
+            docker exec "$EXISTING_CONTAINER_FOR_MARKER" chown -R "$CONTAINER_USER" "$CONTAINER_HOME/.ssh" 2>/dev/null || true
+            docker exec "$EXISTING_CONTAINER_FOR_MARKER" chmod 700 "$CONTAINER_HOME/.ssh" 2>/dev/null || true
+            docker exec "$EXISTING_CONTAINER_FOR_MARKER" sh -c "chmod 600 $CONTAINER_HOME/.ssh/* 2>/dev/null || true" || true
+        fi
+    fi
 fi
 
 # --- 7. LEVANTAR CONTENEDOR CON @DEVCONTAINERS/CLI ---
@@ -378,7 +414,67 @@ if ! devcontainer up \
     exit 1
 fi
 
-# --- 8. ENTRADA AL CONTENEDOR (DEVCONTAINER EXEC) ---
+# --- 8. VERIFICACIÓN E INSTALACIÓN DE DOTFILES ---
+log_info "Verificando instalación de dotfiles dentro del contenedor..."
+if devcontainer exec --workspace-folder "$PWD" --config "$CONFIG_FOR_CLI" bash -c "exit 0" >/dev/null 2>&1; then
+    INSTALL_SHELL="bash"
+else
+    INSTALL_SHELL="sh"
+fi
+
+if ! devcontainer exec --workspace-folder "$PWD" --config "$CONFIG_FOR_CLI" "$INSTALL_SHELL" -c '
+    set -e
+    REPO="$1"
+    TARGET="$2"
+    CMD="$3"
+    MARKER="$HOME/.devcontainer/.dotfilesMarker"
+    
+    if [ ! -f "$MARKER" ]; then
+        echo -e "\e[34m[dcdev:dotfiles]\e[0m No se encontró el marcador. Iniciando instalación de dotfiles..."
+        
+        # Clonar si no existe
+        if [ ! -d "$TARGET" ]; then
+            echo -e "\e[34m[dcdev:dotfiles]\e[0m Clonando $REPO en $TARGET..."
+            if ! git clone "$REPO" "$TARGET"; then
+                echo -e "\e[31m[dcdev:dotfiles] ERROR: Falló la clonación del repositorio de dotfiles.\e[0m" >&2
+                exit 1
+            fi
+        else
+            echo -e "\e[34m[dcdev:dotfiles]\e[0m El directorio $TARGET ya existe."
+        fi
+        
+        # Ejecutar comando de instalación
+        if [ -n "$CMD" ]; then
+            INSTALL_SCRIPT="$TARGET/$CMD"
+            if [ -f "$INSTALL_SCRIPT" ]; then
+                echo -e "\e[34m[dcdev:dotfiles]\e[0m Ejecutando instalador: $INSTALL_SCRIPT..."
+                chmod +x "$INSTALL_SCRIPT"
+                if ! "$INSTALL_SCRIPT"; then
+                    echo -e "\e[33m[dcdev:dotfiles] WARNING: El script de instalación retornó un error.\e[0m" >&2
+                fi
+            elif [ -f "$TARGET/install.sh" ]; then
+                echo -e "\e[34m[dcdev:dotfiles]\e[0m Ejecutando instalador alternativo: $TARGET/install.sh..."
+                chmod +x "$TARGET/install.sh"
+                if ! "$TARGET/install.sh"; then
+                    echo -e "\e[33m[dcdev:dotfiles] WARNING: El script de instalación retornó un error.\e[0m" >&2
+                fi
+            else
+                echo -e "\e[33m[dcdev:dotfiles] WARNING: No se encontró el script de instalación ($CMD).\e[0m" >&2
+            fi
+        fi
+        
+        # Crear marcador
+        mkdir -p "$(dirname "$MARKER")"
+        touch "$MARKER"
+        echo -e "\e[34m[dcdev:dotfiles]\e[0m Instalación finalizada y marcador creado."
+    else
+        echo -e "\e[34m[dcdev:dotfiles]\e[0m Dotfiles ya instalados (marcador encontrado)."
+    fi
+' -- "$DOTFILES_REPOSITORY" "$DOTFILES_TARGET_PATH" "$DOTFILES_INSTALL_COMMAND"; then
+    log_warn "No se pudo completar la instalación de dotfiles automáticamente."
+fi
+
+# --- 9. ENTRADA AL CONTENEDOR (DEVCONTAINER EXEC) ---
 log_info "Entrando al contenedor..."
 
 # Determinar si bash está disponible en el contenedor para devcontainer exec
