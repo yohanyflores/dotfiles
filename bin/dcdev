@@ -392,7 +392,9 @@ else
     echo "    --dotfiles-install-command \"$DOTFILES_INSTALL_COMMAND\""
 fi
 
-# Ejecutamos devcontainer up mostrando toda la salida a la terminal y propagando argumentos adicionales
+# Ejecutamos devcontainer up mostrando toda la salida a la terminal y propagando argumentos adicionales.
+# Si devcontainer up falla (ej. por error del instalador de dotfiles inicial), continuamos
+# para permitir que nuestra fase de auto-recuperación (paso 8) corrija el problema con la versión local.
 if ! devcontainer up \
     --workspace-folder "$PWD" \
     --config "$CONFIG_FOR_CLI" \
@@ -401,8 +403,8 @@ if ! devcontainer up \
     --dotfiles-target-path "$DOTFILES_TARGET_PATH" \
     --dotfiles-install-command "$DOTFILES_INSTALL_COMMAND" \
     "$@"; then
-    log_error "Fallo al ejecutar 'devcontainer up'."
-    exit 1
+    log_warn "devcontainer up finalizó con un código no cero (posiblemente por fallo en el script de dotfiles inicial)."
+    log_warn "Continuando para ejecutar la auto-recuperación local..."
 fi
 
 # --- 8. VERIFICACIÓN E INSTALACIÓN DE DOTFILES ---
