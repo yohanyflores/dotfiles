@@ -914,11 +914,11 @@ styled_header() {
 
     if command -v gum >/dev/null 2>&1; then
         local header_text
-        header_text="  yobydev\n"
-        header_text+="  workspace: $ws\n"
-        header_text+="  config:    $config\n"
-        header_text+="  state:     $state\n"
-        header_text+="  container: ${cname:-none}"
+        header_text="  yobydev
+  workspace: $ws
+  config:    $config
+  state:     $state
+  container: ${cname:-none}"
 
         gum style \
             --border rounded \
