@@ -83,6 +83,7 @@ El instalador clasifica las herramientas mediante perfiles (`DOTFILES_PROFILE`):
 | **core** | **Lazygit** | Interfaz Git interactiva. | `lazygit --version` |
 | **core** | **ripgrep** / **fd** | Búsqueda ultra rápida de texto y archivos. | `rg --version` / `fd --version` |
 | **core** | **fzf** / **jq** / **yq** | Filtro difuso e intérpretes JSON/YAML. | `fzf --version` / `jq --version` / `yq --version` |
+| **core** | **tree** | Visualizador de directorios en formato de árbol. | `tree --version` |
 | **nice** | **bat** / **eza** | Alternativas modernas a `cat` y `ls`. | `bat --version` / `eza --version` |
 | **nice** | **delta** | Formateador de diffs de git premium. | `delta --version` |
 | **nice** | **shellcheck** / **shfmt** | Linter y formateador de scripts shell. | `shellcheck --version` / `shfmt --version` |

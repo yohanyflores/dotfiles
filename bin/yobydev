@@ -33,12 +33,15 @@ log_error() {
 }
 
 # --- VERIFICACIONES EN EL HOST ---
-for cmd in devcontainer docker jq node; do
-    if ! command -v "$cmd" >/dev/null 2>&1; then
-        log_error "El ejecutable requerido '$cmd' no está disponible en el host."
-        exit 1
-    fi
-done
+check_container_prerequisites() {
+    for cmd in devcontainer docker jq node; do
+        if ! command -v "$cmd" >/dev/null 2>&1; then
+            log_error "El ejecutable requerido '$cmd' no está disponible en el host."
+            log_error "Para usar comandos de contenedores en yobydev, instala '$cmd' primero."
+            exit 1
+        fi
+    done
+}
 
 # Resolver rutas de caché
 if [[ "$YOBYDEV_CACHE_DIR" == "~/"* ]]; then
@@ -76,6 +79,7 @@ show_help() {
     echo "  stop      Detiene el dev container."
     echo "  destroy   Detiene y elimina por completo el dev container."
     echo "  logs      Muestra los logs del dev container."
+    echo "  update    Verifica y actualiza las versiones por defecto de las herramientas en install-devcontainer.sh."
     echo ""
     echo "Opciones:"
     echo "  -c, --config <ruta> Especifica un archivo devcontainer.json específico para usar o forzar."
@@ -88,7 +92,7 @@ show_help() {
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        open|reopen|attach|rebuild|stop|destroy|logs|start)
+        open|reopen|attach|rebuild|stop|destroy|logs|start|update)
             ACTION="$1"
             shift
             ;;
@@ -914,6 +918,108 @@ action_logs() {
     fi
 }
 
+action_update() {
+    # Verificar prerrequisitos locales para buscar actualizaciones
+    for cmd in curl jq; do
+        if ! command -v "$cmd" >/dev/null 2>&1; then
+            log_error "El ejecutable requerido '$cmd' es necesario para buscar actualizaciones."
+            exit 1
+        fi
+    done
+
+    log_info "Buscando las últimas versiones de las herramientas en GitHub..."
+
+    local tools_json="tools.json"
+    if [[ ! -f "$tools_json" ]]; then
+        tools_json="$(dirname "$0")/../tools.json"
+    fi
+
+    if [[ ! -f "$tools_json" ]]; then
+        tools_json="$RESOLVED_PWD/tools.json"
+    fi
+
+    if [[ ! -f "$tools_json" ]]; then
+        log_error "No se encontró el archivo 'tools.json' en la raíz del proyecto."
+        exit 1
+    fi
+
+    tools_json=$(readlink -f "$tools_json")
+
+    # Opciones de curl para evitar rate-limits usando GITHUB_TOKEN
+    local curl_opts=(-fsSL)
+    if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+        curl_opts+=(-H "Authorization: Bearer $GITHUB_TOKEN")
+    fi
+
+    local format_row="%-15s | %-15s | %-15s | %-20s\n"
+    printf "$format_row" "Herramienta" "Versión Actual" "Nueva Versión" "Estado"
+    echo "----------------|-----------------|-----------------|--------------------"
+
+    local updates_found=0
+    local -A new_versions
+
+    # Leer herramientas desde tools.json y ordenarlas por nombre
+    while read -r tool_info; do
+        [[ -z "$tool_info" ]] && continue
+        local name=$(echo "$tool_info" | jq -r '.name')
+        local repo=$(echo "$tool_info" | jq -r '.repo')
+        local current_version=$(echo "$tool_info" | jq -r '.version')
+
+        # Obtener última versión tag de GitHub
+        local api_url="https://api.github.com/repos/${repo}/releases/latest"
+        local latest_tag
+        latest_tag=$(curl "${curl_opts[@]}" "$api_url" | jq -r '.tag_name' 2>/dev/null || true)
+
+        if [[ -z "$latest_tag" || "$latest_tag" == "null" ]]; then
+            # Fallback de redirección si la API falla
+            latest_tag=$(curl -fsSL -I -o /dev/null -w "%{url_effective}" "https://github.com/${repo}/releases/latest" 2>/dev/null | grep -oE "tag/.*" | cut -d'/' -f2 || true)
+        fi
+
+        if [[ -z "$latest_tag" ]]; then
+            printf "$format_row" "$name" "$current_version" "error API" "Omitido"
+            continue
+        fi
+
+        local latest_version="${latest_tag#v}"
+
+        # Comparar versiones
+        if [[ "$current_version" != "$latest_version" ]]; then
+            printf "$format_row" "$name" "$current_version" "$latest_version" " [32mActualizable [0m"
+            new_versions[$name]="$latest_version"
+            updates_found=$((updates_found + 1))
+        else
+            printf "$format_row" "$name" "$current_version" "$latest_version" "Al día"
+        fi
+    done < <(jq -c '.tools[]' "$tools_json" | sort)
+
+    echo ""
+    if [[ $updates_found -eq 0 ]]; then
+        log_info "¡Todas las herramientas están en su versión estable más reciente!"
+        return 0
+    fi
+
+    if confirm_action "¿Deseas aplicar las $updates_found actualizaciones en '$(basename "$tools_json")'?"; then
+        local temp_json="${tools_json}.tmp"
+        cp "$tools_json" "$temp_json"
+        
+        for name in "${!new_versions[@]}"; do
+            local new_ver="${new_versions[$name]}"
+            
+            # Actualizar el JSON usando jq
+            jq --arg name "$name" --arg ver "$new_ver" \
+               '(.tools[] | select(.name == $name).version) = $ver' \
+               "$temp_json" > "${temp_json}.tmp" && mv "${temp_json}.tmp" "$temp_json"
+               
+            log_info "Actualizado: $name -> $new_ver"
+        done
+        
+        mv "$temp_json" "$tools_json"
+        log_info "¡Archivo '$(basename "$tools_json")' actualizado con éxito!"
+    else
+        log_info "Actualización cancelada."
+    fi
+}
+
 # --- DISEÑO VISUAL CON GUM ---
 styled_header() {
     local ws="$1"
@@ -958,25 +1064,35 @@ styled_menu() {
 
 # --- FLUJO DE EJECUCIÓN ---
 
-detect_container
-detect_config
-
 # 1. Si hay un subcomando directo
 if [[ -n "$ACTION" ]]; then
     case "$ACTION" in
-        open) action_open ;;
-        reopen) action_reopen ;;
-        attach) action_attach ;;
-        rebuild) action_rebuild ;;
-        start) action_start ;;
-        stop) action_stop ;;
-        destroy) action_destroy ;;
-        logs) action_logs ;;
+        update)
+            action_update
+            ;;
+        open|reopen|attach|rebuild|start|stop|destroy|logs)
+            check_container_prerequisites
+            detect_container
+            detect_config
+            case "$ACTION" in
+                open) action_open ;;
+                reopen) action_reopen ;;
+                attach) action_attach ;;
+                rebuild) action_rebuild ;;
+                start) action_start ;;
+                stop) action_stop ;;
+                destroy) action_destroy ;;
+                logs) action_logs ;;
+            esac
+            ;;
     esac
     exit 0
 fi
 
-# 2. Si no hay subcomando, mostrar interfaz interactiva
+# 2. Si no hay subcomando, mostrar interfaz interactiva (requiere entorno de contenedores)
+check_container_prerequisites
+detect_container
+detect_config
 WORKSPACE_NAME=$(basename "$RESOLVED_PWD")
 styled_header "$WORKSPACE_NAME" "$CONFIG_FOR_CLI" "$CONTAINER_STATE" "$CONTAINER_NAME"
 

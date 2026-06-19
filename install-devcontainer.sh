@@ -7,6 +7,9 @@
 
 set -euo pipefail
 
+# --- CONFIGURACIÓN DE ENTORNOS Y RUTAS ---
+DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # --- LOGGING UTILS ---
 log_info() {
     echo -e "\e[34m[INFO]\e[0m $*"
@@ -31,21 +34,6 @@ run_sudo() {
         "$@"
     fi
 }
-
-# --- CONFIGURACIÓN DE VERSIONES (FASE 2) ---
-LAZYGIT_VERSION="${LAZYGIT_VERSION:-0.40.2}"
-JUST_VERSION="${JUST_VERSION:-1.14.0}"
-ZELLIJ_VERSION="${ZELLIJ_VERSION:-0.38.2}"
-YQ_VERSION="${YQ_VERSION:-4.35.2}"
-BAT_VERSION="${BAT_VERSION:-0.24.0}"
-EZA_VERSION="${EZA_VERSION:-0.16.0}"
-DELTA_VERSION="${DELTA_VERSION:-0.16.5}"
-SHFMT_VERSION="${SHFMT_VERSION:-3.7.0}"
-XH_VERSION="${XH_VERSION:-0.22.0}"
-YAZI_VERSION="${YAZI_VERSION:-0.2.4}"
-MICRO_VERSION="${MICRO_VERSION:-2.0.11}"
-GOMPLATE_VERSION="${GOMPLATE_VERSION:-3.11.5}"
-GUM_VERSION="${GUM_VERSION:-0.17.0}"
 
 # --- CONFIGURACIÓN DE CACHÉ ---
 # El wrapper yobydev pasará DOTFILES_CACHE_DIR apuntando al bind-mount del host
@@ -256,32 +244,37 @@ elif command -v apk >/dev/null 2>&1; then
 fi
 
 # ==============================================================================
-# 2. INSTALACIÓN POR PERFILES
+# 2. INSTALACIÓN POR PERFILES DESDE TOOLS.JSON
 # ==============================================================================
 
-# --- PERFIL: CORE ---
-if [[ "$DOTFILES_PROFILE" == "core" || "$DOTFILES_PROFILE" == "full" ]]; then
-    log_info "Instalando herramientas del perfil CORE..."
-    
-    install_github_tool "lazygit" "jesseduffield/lazygit" "$LAZYGIT_VERSION" 'lazygit_${VERSION_NO_V}_Linux_${ARCH}.tar.gz'
-    install_github_tool "just" "casey/just" "$JUST_VERSION" 'just-${TAG}-${ARCH}-unknown-linux-musl.tar.gz'
-    install_github_tool "zellij" "zellij-org/zellij" "$ZELLIJ_VERSION" 'zellij-${ARCH}-unknown-linux-musl.tar.gz'
-    install_github_tool "yq" "mikefarah/yq" "$YQ_VERSION" 'yq_linux_${ARCH}'
-fi
+# Localizar archivo tools.json
+TOOLS_JSON="${DOTFILES_DIR}/tools.json"
 
-# --- PERFIL: NICE ---
-if [[ "$DOTFILES_PROFILE" == "full" ]]; then
-    log_info "Instalando herramientas del perfil NICE..."
+if [[ -f "$TOOLS_JSON" ]]; then
+    log_info "Cargando catálogo de herramientas desde $TOOLS_JSON..."
     
-    install_github_tool "bat" "sharkdp/bat" "$BAT_VERSION" 'bat-v${VERSION_NO_V}-${ARCH}-unknown-linux-musl.tar.gz' "bat"
-    install_github_tool "eza" "eza-community/eza" "$EZA_VERSION" 'eza_${ARCH}-unknown-linux-musl.tar.gz' "eza"
-    install_github_tool "delta" "dandavison/delta" "$DELTA_VERSION" 'delta-${TAG}-${ARCH}-unknown-linux-musl.tar.gz' "delta"
-    install_github_tool "shfmt" "mvdan/sh" "$SHFMT_VERSION" 'shfmt_v${VERSION_NO_V}_linux_${ARCH}'
-    install_github_tool "xh" "ducaale/xh" "$XH_VERSION" 'xh-v${VERSION_NO_V}-${ARCH}-unknown-linux-musl.tar.gz' "xh"
-    install_github_tool "yazi" "sxyazi/yazi" "$YAZI_VERSION" 'yazi-${ARCH}-unknown-linux-musl.zip' "yazi"
-    install_github_tool "micro" "zyedidia/micro" "$MICRO_VERSION" 'micro-${VERSION_NO_V}-${ARCH}.tar.gz' "micro"
-    install_github_tool "gomplate" "hairyhenderson/gomplate" "$GOMPLATE_VERSION" 'gomplate_linux-${ARCH}'
-    install_github_tool "gum" "charmbracelet/gum" "$GUM_VERSION" 'gum_${VERSION_NO_V}_Linux_${ARCH}.tar.gz'
+    # Filtrar herramientas en base al perfil
+    # 'core' instala solo core. 'full' instala core y nice.
+    filter="select(.profile == \"core\")"
+    if [[ "$DOTFILES_PROFILE" == "full" ]]; then
+        filter="select(.profile == \"core\" or .profile == \"nice\")"
+    fi
+
+    # Leer herramientas del JSON e instalarlas
+    while read -r tool_info; do
+        [[ -z "$tool_info" ]] && continue
+        
+        name=$(echo "$tool_info" | jq -r '.name')
+        repo=$(echo "$tool_info" | jq -r '.repo')
+        version=$(echo "$tool_info" | jq -r '.version')
+        pattern=$(echo "$tool_info" | jq -r '.pattern')
+        binary_inside=$(echo "$tool_info" | jq -r '.binary_inside // ""')
+        
+        log_info "Instalando $name ($version)..."
+        install_github_tool "$name" "$repo" "$version" "$pattern" "${binary_inside:-$name}"
+    done < <(jq -c ".tools[] | ${filter}" "$TOOLS_JSON")
+else
+    log_warn "No se encontró el archivo tools.json. Omitiendo instalación de GitHub tools."
 fi
 
 # --- PERFIL: EXPERIMENTAL ---
@@ -308,7 +301,6 @@ fi
 # ==============================================================================
 # 3. ENLAZAR CONFIGURACIONES PERSONALES
 # ==============================================================================
-DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 log_info "Aplicando enlaces de configuración desde: $DOTFILES_DIR"
 
 create_symlink "$DOTFILES_DIR/nvim"   "$HOME/.config/nvim"
