@@ -48,7 +48,7 @@ GOMPLATE_VERSION="${GOMPLATE_VERSION:-3.11.5}"
 GUM_VERSION="${GUM_VERSION:-0.17.0}"
 
 # --- CONFIGURACIÓN DE CACHÉ ---
-# El wrapper dcdev pasará DOTFILES_CACHE_DIR apuntando al bind-mount del host
+# El wrapper yobydev pasará DOTFILES_CACHE_DIR apuntando al bind-mount del host
 CACHE_DIR="${DOTFILES_CACHE_DIR:-$HOME/.cache/dotfiles-tools}"
 log_info "Directorio de caché configurado en: $CACHE_DIR"
 
@@ -334,8 +334,10 @@ if ! grep -q "local/bin" "$HOME/.bashrc" 2>/dev/null; then
     log_info "PATH local agregado a ~/.bashrc"
 fi
 
-# Crear marcador de éxito para dcdev
+# Crear marcador de éxito para yobydev
 mkdir -p "$HOME/.devcontainer"
 touch "$HOME/.devcontainer/.dotfilesSuccess"
+mkdir -p "$HOME/.yobydev"
+touch "$HOME/.yobydev/success"
 
 log_info "Entorno de Dev Container personalizado con éxito."
