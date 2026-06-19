@@ -284,7 +284,7 @@ if [[ "$DOTFILES_PROFILE" == "full" ]]; then
     # Antigravity CLI
     if ! command -v agy >/dev/null 2>&1; then
         log_info "Instalando antigravity-cli..."
-        if ! curl -fsSL https://antigravity.google/cli/install.sh | bash; then
+        if ! curl -fsSL https://antigravity.google/cli/install.sh | sed 's/platform="linux_${arch}_musl"/platform="linux_${arch}"/' | bash; then
             log_warn "No se pudo completar la instalación de antigravity-cli."
         fi
     fi
@@ -310,6 +310,38 @@ create_symlink "$DOTFILES_DIR/fish"   "$HOME/.config/fish"
 create_symlink "$DOTFILES_DIR/lazygit" "$HOME/.config/lazygit"
 create_symlink "$DOTFILES_DIR/scripts/git-agy-commit.sh" "$HOME/.local/bin/git-agy-commit"
 create_symlink "$DOTFILES_DIR/scripts/git-opencode-commit.sh" "$HOME/.local/bin/git-opencode-commit"
+
+# Persistencia de configuraciones de agentes (agy y opencode) en el espacio de trabajo
+WORKSPACE_DIR=""
+if [[ -n "${YOBYDEV_WORKSPACE_FOLDER:-}" && -d "$YOBYDEV_WORKSPACE_FOLDER/.home" ]]; then
+    WORKSPACE_DIR="$YOBYDEV_WORKSPACE_FOLDER"
+elif [[ -n "${WORKSPACE_FOLDER:-}" && -d "$WORKSPACE_FOLDER/.home" ]]; then
+    WORKSPACE_DIR="$WORKSPACE_FOLDER"
+elif [[ -n "${WORKSPACE_ROOT:-}" && -d "$WORKSPACE_ROOT/.home" ]]; then
+    WORKSPACE_DIR="$WORKSPACE_ROOT"
+elif [[ -n "${WORKSPACE_HOME:-}" && -d "$WORKSPACE_HOME/.home" ]]; then
+    WORKSPACE_DIR="$WORKSPACE_HOME"
+elif [[ -d "/workspace/.home" ]]; then
+    WORKSPACE_DIR="/workspace"
+else
+    # Fallback: Buscar dinámicamente en /workspaces/
+    for ws in /workspaces/*; do
+        if [[ -d "$ws/.home" ]]; then
+            WORKSPACE_DIR="$ws"
+            break
+        fi
+    done
+fi
+
+if [[ -n "$WORKSPACE_DIR" ]]; then
+    log_info "Carpeta de persistencia detectada en: $WORKSPACE_DIR/.home"
+    mkdir -p "$WORKSPACE_DIR/.home/.gemini"
+    mkdir -p "$WORKSPACE_DIR/.home/.opencode"
+    create_symlink "$WORKSPACE_DIR/.home/.gemini"   "$HOME/.gemini"
+    create_symlink "$WORKSPACE_DIR/.home/.opencode" "$HOME/.opencode"
+else
+    log_warn "No se detectó ninguna carpeta de persistencia (.home) en el espacio de trabajo. Omitiendo enlaces de agentes."
+fi
 
 if [[ -f "$DOTFILES_DIR/git/gitconfig" ]]; then
     create_symlink "$DOTFILES_DIR/git/gitconfig" "$HOME/.gitconfig"

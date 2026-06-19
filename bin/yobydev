@@ -146,6 +146,26 @@ detect_container() {
     fi
 }
 
+# --- ASEGURAR CONVENCIÓN DE PERSISTENCIA ---
+ensure_persistence_convention() {
+    # 1. Crear la carpeta de persistencia .home de manera idempotente
+    if [[ ! -d ".home" ]]; then
+        log_info "Creando carpeta de persistencia local '.home' para configuraciones de agentes..."
+        mkdir -p ".home"
+    fi
+
+    # 2. Agregar .home/ a .gitignore si no está presente
+    if [[ -f ".gitignore" ]]; then
+        if ! grep -q "^\.home/" ".gitignore" 2>/dev/null && ! grep -q "^/\.home/" ".gitignore" 2>/dev/null && ! grep -q "^\.home\b" ".gitignore" 2>/dev/null; then
+            log_info "Añadiendo '.home/' a .gitignore..."
+            echo -e "\n# Ignorar carpeta de persistencia local de devcontainer\n.home/" >> ".gitignore"
+        fi
+    else
+        log_info "Creando .gitignore y añadiendo '.home/'..."
+        echo -e "# Ignorar carpeta de persistencia local de devcontainer\n.home/" > ".gitignore"
+    fi
+}
+
 # --- DETECCIÓN DE ARCHIVO DE CONFIGURACIÓN ---
 detect_config() {
     # Si el usuario especificó explícitamente una configuración por variable de entorno o CLI, priorizarla siempre
@@ -413,6 +433,9 @@ try {
             DOTFILES_TARGET_PATH="/home/${expected_user}/dotfiles"
         fi
     fi
+
+    # Asegurar convención de persistencia local
+    ensure_persistence_convention
 }
 
 # --- CONFIGURACIÓN DE AGENTE SSH ---
@@ -546,6 +569,10 @@ try {
     config.mounts.push(`source=${cacheDir},target=/tmp/yobydev-tools-cache,type=bind`);
     config.remoteEnv.DOTFILES_CACHE_DIR = "/tmp/yobydev-tools-cache";
   }
+
+  // Definir la ruta del espacio de trabajo en el contenedor
+  const workspaceFolder = config.workspaceFolder || `/workspaces/${path.basename(workspaceRoot)}`;
+  config.remoteEnv.YOBYDEV_WORKSPACE_FOLDER = workspaceFolder;
 
   // Caches específicas por lenguajes (Detección estática)
   const hasPackageJson = fs.existsSync(path.join(workspaceRoot, "package.json"));
