@@ -69,6 +69,16 @@ export GITHUB_TOKEN="ghp_tuTokenAqui"
    - Si hay múltiples archivos `devcontainer.json` (típico en monorepos), el script te presentará un menú interactivo usando `gum` (si está instalado en tu host) o un menú Bash `select` nativo como fallback para elegir cuál deseas iniciar.
 4. El script levantará el entorno, inyectará tus dotfiles, correrá el instalador inteligente (usando la caché si los binarios ya fueron descargados previamente) y te dejará dentro de una sesión interactiva del contenedor.
 
+### 💡 Atajos de Commit con IA en Lazygit
+
+Este repositorio incluye una integración directa con `lazygit`. Cuando te encuentres en el panel de **Files** (Archivos), puedes utilizar los siguientes atajos para generar automáticamente mensajes de commit convencionales basados en los cambios que tienes en stage:
+
+*   **`Alt + c`**: Genera un mensaje de commit usando **`agy`** (Antigravity).
+*   **`Alt + Shift + C` o `Alt + C`**: Genera un mensaje de commit usando **`opencode`**.
+
+Ambos atajos abrirán un editor interactivo usando `gum` (o un fallback interactivo en consola si no está instalado) para revisar, editar o cancelar el mensaje generado por la IA antes de confirmar el commit.
+
+
 ---
 
 ## 📦 Catálogo de Herramientas Soportadas
