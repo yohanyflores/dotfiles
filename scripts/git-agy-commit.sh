@@ -96,7 +96,15 @@ set +e
 OUT_FILE=$(mktemp /tmp/agy_out_XXXXXX)
 ERR_FILE=$(mktemp /tmp/agy_err_XXXXXX)
 
-git diff --staged | agy --print "Genera un mensaje de commit conciso para estos cambios. Devuelve ÚNICAMENTE el mensaje de commit crudo, sin formato markdown, sin bloques de código, sin comillas y sin explicaciones adicionales. Sigue el formato de Conventional Commits en español." >"$OUT_FILE" 2>"$ERR_FILE"
+git diff --staged | agy --print "Genera un mensaje de commit en formato Conventional Commits en español para el diff recibido.
+
+Sigue estas reglas:
+1. Si el cambio es simple o pequeño, genera un mensaje de una sola línea (ej. 'fix(auth): corregir validación').
+2. Si el cambio es complejo, introduce lógica nueva o afecta varios archivos, genera un formato estructurado:
+   - Primera línea: Título conciso (máximo 72 caracteres) en formato Conventional Commits.
+   - Segunda línea: En blanco.
+   - Líneas siguientes: Cuerpo explicativo corto (en párrafos o viñetas) que detalle el qué y el porqué.
+3. Devuelve ÚNICAMENTE el texto crudo del mensaje de commit, sin bloques de código markdown, sin comillas externas y sin explicaciones adicionales." >"$OUT_FILE" 2>"$ERR_FILE"
 AGY_STATUS=$?
 
 AI_MSG=$(cat "$OUT_FILE")

@@ -101,7 +101,15 @@ DIFF=$(git diff --staged)
 OUT_FILE=$(mktemp /tmp/opencode_out_XXXXXX)
 ERR_FILE=$(mktemp /tmp/opencode_err_XXXXXX)
 
-opencode run "Genera un mensaje de commit Conventional Commit en español para el siguiente diff. Devuelve ÚNICAMENTE el mensaje de commit crudo en una sola línea, sin formato markdown, sin bloques de código, sin comillas y sin explicaciones adicionales:
+opencode run "Genera un mensaje de commit en formato Conventional Commits en español para los cambios del diff recibido.
+
+Sigue estas reglas:
+1. Si el cambio es simple o pequeño, genera un mensaje de una sola línea (ej. 'fix(auth): corregir validación').
+2. Si el cambio es complejo, introduce lógica nueva o afecta varios archivos, genera un formato estructurado:
+   - Primera línea: Título conciso (máximo 72 caracteres) en formato Conventional Commits.
+   - Segunda línea: En blanco.
+   - Líneas siguientes: Cuerpo explicativo corto (en párrafos o viñetas) que detalle el qué y el porqué.
+3. Devuelve ÚNICAMENTE el texto crudo del mensaje de commit, sin bloques de código markdown, sin comillas externas y sin explicaciones adicionales:
 
 $DIFF" >"$OUT_FILE" 2>"$ERR_FILE"
 OPENCODE_STATUS=$?
