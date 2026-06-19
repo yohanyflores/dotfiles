@@ -622,7 +622,8 @@ ensure_ssh_keys() {
                 docker exec "$CONTAINER_ID" mkdir -p "$container_home/.ssh" 2>/dev/null || true
                 docker cp "$HOME/.ssh/." "$CONTAINER_ID:$container_home/.ssh/"
                 
-                docker exec "$CONTAINER_ID" chown -R "$container_user" "$container_home/.ssh" 2>/dev/null || true
+                # Asegurar que el HOME completo y .ssh pertenecen al usuario del contenedor
+                docker exec "$CONTAINER_ID" chown -R "$container_user" "$container_home" 2>/dev/null || true
                 docker exec "$CONTAINER_ID" chmod 700 "$container_home/.ssh" 2>/dev/null || true
                 docker exec "$CONTAINER_ID" sh -c "chmod 600 $container_home/.ssh/* 2>/dev/null || true" || true
             fi
@@ -649,7 +650,15 @@ sync_dotfiles() {
     container_user=$(devcontainer exec --workspace-folder "$PWD" --config "$CONFIG_FOR_CLI" whoami 2>/dev/null | tr -d '\r\n' || echo "vscode")
     container_user="${container_user:-vscode}"
     
-    docker exec "$CONTAINER_ID" chown -R "$container_user" "$DOTFILES_TARGET_PATH" 2>/dev/null || true
+    local container_home
+    container_home=$(devcontainer exec --workspace-folder "$PWD" --config "$CONFIG_FOR_CLI" sh -c 'echo "$HOME"' 2>/dev/null | tr -d '\r\n' || echo "/home/${container_user}")
+    container_home="${container_home:-/home/$container_user}"
+    if [[ "$container_user" == "root" ]]; then
+        container_home="/root"
+    fi
+
+    # Asegurar propiedad de todo el HOME y de dotfiles target path para evitar Permission Denied en subprocesos
+    docker exec "$CONTAINER_ID" chown -R "$container_user" "$container_home" 2>/dev/null || true
     docker exec "$CONTAINER_ID" sh -c "find $DOTFILES_TARGET_PATH -name '*.sh' -exec chmod +x {} \;" 2>/dev/null || true
 }
 
