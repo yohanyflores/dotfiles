@@ -78,9 +78,10 @@ show_help() {
     echo "  logs      Muestra los logs del dev container."
     echo ""
     echo "Opciones:"
-    echo "  -n, --no-cache  Reconstruye sin usar la caché de Docker (solo rebuild)."
-    echo "  -f, --force     Omite las confirmaciones interactivas de acciones destructivas."
-    echo "  -h, --help      Muestra esta ayuda."
+    echo "  -c, --config <ruta> Especifica un archivo devcontainer.json específico para usar o forzar."
+    echo "  -n, --no-cache      Reconstruye sin usar la caché de Docker (solo rebuild)."
+    echo "  -f, --force         Omite las confirmaciones interactivas de acciones destructivas."
+    echo "  -h, --help          Muestra esta ayuda."
     echo ""
     echo "Si se ejecuta sin comando, se abre un menú interactivo con el estado actual."
 }
@@ -98,6 +99,15 @@ while [[ $# -gt 0 ]]; do
         -f|--force)
             FORCE=true
             shift
+            ;;
+        -c|--config)
+            if [[ $# -gt 1 ]]; then
+                DEVCONTAINER_CONFIG="$2"
+                shift 2
+            else
+                log_error "Falta especificar la ruta del archivo para --config"
+                exit 1
+            fi
             ;;
         -h|--help)
             show_help
@@ -134,6 +144,158 @@ detect_container() {
 
 # --- DETECCIÓN DE ARCHIVO DE CONFIGURACIÓN ---
 detect_config() {
+    # Si el usuario especificó explícitamente una configuración por variable de entorno o CLI, priorizarla siempre
+    if [[ -n "${DEVCONTAINER_CONFIG:-}" ]]; then
+        CONFIG="$DEVCONTAINER_CONFIG"
+        if [[ ! -f "$CONFIG" ]]; then
+            log_error "El archivo configurado en DEVCONTAINER_CONFIG no existe: $CONFIG"
+            exit 1
+        fi
+        CONFIG=$(readlink -f "$CONFIG")
+        CONFIG_FOR_CLI="$CONFIG"
+        if [[ "$CONFIG" == "$RESOLVED_PWD/"* ]]; then
+            CONFIG_FOR_CLI="${CONFIG#$RESOLVED_PWD/}"
+        fi
+
+        # Auto-completar ruta destino de dotfiles
+        if [[ -z "$DOTFILES_TARGET_PATH" ]]; then
+            local expected_user
+            expected_user=$(node -e '
+const fs = require("fs");
+function stripComments(jsonc) {
+  let isString = false;
+  let isLineComment = false;
+  let isBlockComment = false;
+  let result = "";
+  for (let i = 0; i < jsonc.length; i++) {
+    const char = jsonc[i];
+    const nextChar = jsonc[i + 1];
+    if (isLineComment) {
+      if (char === "\n" || char === "\r") {
+        isLineComment = false;
+        result += char;
+      }
+    } else if (isBlockComment) {
+      if (char === "*" && nextChar === "/") {
+        isBlockComment = false;
+        i++;
+      }
+    } else if (isString) {
+      if (char === "\"" && jsonc[i - 1] !== "\\") {
+        isString = false;
+      }
+      result += char;
+    } else {
+      if (char === "/" && nextChar === "/") {
+        isLineComment = true;
+        i++;
+      } else if (char === "/" && nextChar === "*") {
+        isBlockComment = true;
+        i++;
+      } else {
+        if (char === "\"") {
+          isString = true;
+        }
+        result += char;
+      }
+    }
+  }
+  return result;
+}
+try {
+  const jsonc = fs.readFileSync(process.argv[1], "utf8");
+  const cleanJson = stripComments(jsonc);
+  const config = JSON.parse(cleanJson);
+  console.log(config.remoteUser || config.containerUser || "vscode");
+} catch (e) {
+  console.log("vscode");
+}
+' "$CONFIG")
+            if [[ "$expected_user" == "root" ]]; then
+                DOTFILES_TARGET_PATH="/root/dotfiles"
+            else
+                DOTFILES_TARGET_PATH="/home/${expected_user}/dotfiles"
+            fi
+        fi
+        return 0
+    fi
+
+    # Si el contenedor existe (corriendo o detenido), extraer la config usada de sus labels
+    if [[ "$CONTAINER_STATE" != "missing" ]] && [[ -n "$CONTAINER_ID" ]]; then
+        local existing_config
+        existing_config=$(docker inspect --format '{{index .Config.Labels "devcontainer.config_file"}}' "$CONTAINER_ID" 2>/dev/null || true)
+        if [[ -n "$existing_config" ]]; then
+            CONFIG="$existing_config"
+            CONFIG=$(readlink -f "$CONFIG")
+            CONFIG_FOR_CLI="$CONFIG"
+            if [[ "$CONFIG" == "$RESOLVED_PWD/"* ]]; then
+                CONFIG_FOR_CLI="${CONFIG#$RESOLVED_PWD/}"
+            fi
+
+            # Auto-completar ruta destino de dotfiles
+            if [[ -z "$DOTFILES_TARGET_PATH" ]]; then
+                local expected_user
+                expected_user=$(node -e '
+const fs = require("fs");
+function stripComments(jsonc) {
+  let isString = false;
+  let isLineComment = false;
+  let isBlockComment = false;
+  let result = "";
+  for (let i = 0; i < jsonc.length; i++) {
+    const char = jsonc[i];
+    const nextChar = jsonc[i + 1];
+    if (isLineComment) {
+      if (char === "\n" || char === "\r") {
+        isLineComment = false;
+        result += char;
+      }
+    } else if (isBlockComment) {
+      if (char === "*" && nextChar === "/") {
+        isBlockComment = false;
+        i++;
+      }
+    } else if (isString) {
+      if (char === "\"" && jsonc[i - 1] !== "\\") {
+        isString = false;
+      }
+      result += char;
+    } else {
+      if (char === "/" && nextChar === "/") {
+        isLineComment = true;
+        i++;
+      } else if (char === "/" && nextChar === "*") {
+        isBlockComment = true;
+        i++;
+      } else {
+        if (char === "\"") {
+          isString = true;
+        }
+        result += char;
+      }
+    }
+  }
+  return result;
+}
+try {
+  const jsonc = fs.readFileSync(process.argv[1], "utf8");
+  const cleanJson = stripComments(jsonc);
+  const config = JSON.parse(cleanJson);
+  console.log(config.remoteUser || config.containerUser || "vscode");
+} catch (e) {
+  console.log("vscode");
+}
+' "$CONFIG")
+                if [[ "$expected_user" == "root" ]]; then
+                    DOTFILES_TARGET_PATH="/root/dotfiles"
+                else
+                    DOTFILES_TARGET_PATH="/home/${expected_user}/dotfiles"
+                fi
+            fi
+            return 0
+        fi
+    fi
+
     if [[ -n "${DEVCONTAINER_CONFIG:-}" ]]; then
         CONFIG="$DEVCONTAINER_CONFIG"
         if [[ ! -f "$CONFIG" ]]; then
@@ -541,7 +703,7 @@ run_dotfiles_installer() {
                         echo -e "\e[33m[yobydev:dotfiles] WARNING: El script de instalación falló.\e[0m" >&2
                     fi
                 elif [ -f "$TARGET/install.sh" ]; then
-                    echo -e "\e[34m[yobydev:dotfiles]\e[0m Ejecutando instalador alternador: $TARGET/install.sh..."
+                    echo -e "\e[34m[yobydev:dotfiles]\e[0m Ejecutando instalador alternativo: $TARGET/install.sh..."
                     chmod +x "$TARGET/install.sh"
                     if "$TARGET/install.sh"; then
                         touch "$SUCCESS_MARKER"
@@ -650,6 +812,9 @@ action_attach() {
 
 action_rebuild() {
     detect_container
+    # Detectar la configuración antes de destruir el contenedor para recordar el archivo original
+    detect_config
+
     if [[ "$CONTAINER_STATE" != "missing" ]]; then
         if ! confirm_action "¿Estás seguro de reconstruir el contenedor? Se perderá el estado interno."; then
             log_info "Cancelado."
@@ -659,7 +824,6 @@ action_rebuild() {
         docker rm -f "$CONTAINER_ID" >/dev/null 2>&1 || true
     fi
 
-    detect_config
     setup_ssh
     generate_override
 
