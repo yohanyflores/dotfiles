@@ -235,8 +235,14 @@ export PATH="$HOME/.local/bin:$PATH"
 if command -v apt-get >/dev/null 2>&1; then
     run_sudo apt-get update -y
     # Instalamos utilidades que siempre están en los repos y son de sistema
-    apt_packages=(git curl unzip zip jq ripgrep fzf tmux fd-find neovim tree shellcheck)
+    apt_packages=(git curl unzip zip jq ripgrep fzf tmux fd-find neovim tree shellcheck locales)
     run_sudo apt-get install -y "${apt_packages[@]}"
+    
+    # Generar locale UTF-8 para que editores como nano muestren acentos correctamente
+    if [ -f /etc/locale.gen ]; then
+        run_sudo sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen
+        run_sudo locale-gen en_US.UTF-8 2>/dev/null || true
+    fi
     
     # Resolver 'fd' en Debian
     if command -v fdfind >/dev/null 2>&1 && [[ ! -e "$HOME/.local/bin/fd" ]]; then

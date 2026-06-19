@@ -10,8 +10,13 @@
 set -euo pipefail
 
 # --- Forzar UTF-8 para que los acentos se muestren bien en editores externos ---
-export LANG="${LANG:-C.UTF-8}"
-export LC_ALL="${LC_ALL:-C.UTF-8}"
+if locale -a 2>/dev/null | grep -qi 'en_US.utf.*8'; then
+    export LANG="en_US.UTF-8"
+    export LC_ALL="en_US.UTF-8"
+else
+    export LANG="${LANG:-C.UTF-8}"
+    export LC_ALL="${LC_ALL:-C.UTF-8}"
+fi
 
 # --- Helpers ---
 HAS_GUM=false
