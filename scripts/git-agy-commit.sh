@@ -4,7 +4,7 @@
 # Descripción: Genera un mensaje de commit con AI (agy) y lo presenta en un
 #              editor interactivo para aceptar, editar o cancelar.
 #
-# Flujo:  Ctrl+D = aceptar  |  Ctrl+C = cancelar  |  Enter = nueva línea
+# Flujo:  Enter = aceptar  |  Esc = cancelar  |  Ctrl+J = nueva línea  |  Ctrl+E = editor
 # ==============================================================================
 
 set -euo pipefail
@@ -83,7 +83,7 @@ fi
 if $HAS_GUM; then
     # ── Flujo con gum: un solo paso ──
     styled_header "✏️  Revisa el mensaje — edítalo si quieres"
-    styled_info "Ctrl+D → aceptar y hacer commit  •  Ctrl+C → cancelar"
+    styled_info "Enter → aceptar  •  Esc → cancelar  •  Ctrl+J → nueva línea  •  Ctrl+E → editor"
     echo ""
 
     set +e
