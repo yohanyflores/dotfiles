@@ -284,7 +284,9 @@ if [[ "$DOTFILES_PROFILE" == "full" ]]; then
     # Antigravity CLI
     if ! command -v agy >/dev/null 2>&1; then
         log_info "Instalando antigravity-cli..."
-        if ! curl -fsSL https://antigravity.google/cli/install.sh | sed 's/platform="linux_${arch}_musl"/platform="linux_${arch}"/' | bash; then
+        #if ! curl -fsSL https://antigravity.google/cli/install.sh | sed 's/platform="linux_${arch}_musl"/platform="linux_${arch}"/' | bash; then
+        if ! curl -fsSL https://antigravity.google/cli/install.sh | bash; then
+        
             log_warn "No se pudo completar la instalación de antigravity-cli."
         fi
     fi
