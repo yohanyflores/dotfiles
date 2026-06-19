@@ -75,7 +75,21 @@ if git diff --quiet --cached; then
     exit 1
 fi
 
-# --- 2. Generar el mensaje con agy ---
+# --- 2. Validar autenticación de agy (Pre-flight check) ---
+styled_info "Verificando autenticación de Antigravity (agy)..."
+set +e
+AGY_MODELS_OUT=$(agy models 2>&1)
+AGY_MODELS_STATUS=$?
+set -e
+
+if [[ $AGY_MODELS_STATUS -ne 0 ]] || [[ "$AGY_MODELS_OUT" =~ "Please sign in" ]] || [[ "$AGY_MODELS_OUT" =~ "Authentication required" ]]; then
+    echo ""
+    styled_err "ERROR DE AUTENTICACIÓN: No has iniciado sesión en Antigravity (agy)."
+    styled_info "Por favor, ejecuta 'agy' en tu terminal para iniciar sesión."
+    exit 1
+fi
+
+# --- 3. Generar el mensaje con agy ---
 styled_header "⚡ Generando commit con AI..."
 
 set +e
@@ -91,7 +105,22 @@ ERR_MSG=$(cat "$ERR_FILE")
 rm -f "$OUT_FILE" "$ERR_FILE"
 set -e
 
-# Detectar errores de autenticación o problemas del agente
+# Detectar si el texto contiene patrones de solicitud de inicio de sesión (cuando el status es 0 pero igual falló)
+is_login_prompt() {
+    local text="${1}"
+    if [[ "$text" =~ "Authentication required" ]] || \
+       [[ "$text" =~ "Please visit the URL" ]] || \
+       [[ "$text" =~ "accounts.google.com" ]] || \
+       [[ "$text" =~ "oauth2/auth" ]] || \
+       [[ "$text" =~ "Enter authorization code" ]] || \
+       [[ "$text" =~ "Please log in" ]] || \
+       [[ "$text" =~ "Please sign in" ]]; then
+        return 0
+    fi
+    return 1
+}
+
+# Detectar errores de autenticación genéricos cuando el comando falló (status != 0)
 is_auth_error() {
     local text="${1,,}"
     if [[ "$text" =~ "auth" ]] || [[ "$text" =~ "login" ]] || [[ "$text" =~ "credential" ]] || \
@@ -102,6 +131,14 @@ is_auth_error() {
     fi
     return 1
 }
+
+# Primero evaluar si la salida (aún con status 0) contiene un prompt de autenticación claro
+if is_login_prompt "$AI_MSG"; then
+    echo ""
+    styled_err "ERROR DE AUTENTICACIÓN: No has iniciado sesión o no tienes credenciales válidas en Antigravity (agy)."
+    styled_info "Por favor, ejecuta 'agy login' o verifica tu sesión de Antigravity."
+    exit 1
+fi
 
 if [[ $AGY_STATUS -ne 0 ]]; then
     echo ""

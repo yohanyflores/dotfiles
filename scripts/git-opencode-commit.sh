@@ -75,7 +75,25 @@ if git diff --quiet --cached; then
     exit 1
 fi
 
-# --- 2. Generar el mensaje con opencode ---
+# --- 2. Validar autenticación de opencode (Pre-flight check) ---
+styled_info "Verificando autenticación de OpenCode..."
+set +e
+OPENCODE_AUTH_OUT=$(opencode auth list 2>&1)
+OPENCODE_AUTH_STATUS=$?
+set -e
+
+# Limpiar códigos de color ANSI para evitar falsos negativos
+CLEAN_AUTH_OUT=$(echo "$OPENCODE_AUTH_OUT" | sed 's/\x1b\[[0-9;]*m//g')
+
+# Comprobar si el código es error o si el reporte limpio contiene exactamente '0 credentials'
+if [[ $OPENCODE_AUTH_STATUS -ne 0 ]] || [[ "$CLEAN_AUTH_OUT" =~ [[:space:]]0[[:space:]]+credentials ]]; then
+    echo ""
+    styled_err "ERROR DE AUTENTICACIÓN: No has iniciado sesión o no tienes credenciales en OpenCode."
+    styled_info "Por favor, ejecuta 'opencode auth login' en tu terminal para iniciar sesión."
+    exit 1
+fi
+
+# --- 3. Generar el mensaje con opencode ---
 styled_header "⚡ Generando commit con OpenCode (AI)..."
 
 set +e
@@ -94,7 +112,22 @@ ERR_MSG=$(cat "$ERR_FILE")
 rm -f "$OUT_FILE" "$ERR_FILE"
 set -e
 
-# Detectar errores de autenticación
+# Detectar si el texto contiene patrones de solicitud de inicio de sesión (cuando el status es 0 pero igual falló)
+is_login_prompt() {
+    local text="${1}"
+    if [[ "$text" =~ "Authentication required" ]] || \
+       [[ "$text" =~ "Please visit the URL" ]] || \
+       [[ "$text" =~ "accounts.google.com" ]] || \
+       [[ "$text" =~ "oauth2/auth" ]] || \
+       [[ "$text" =~ "Enter authorization code" ]] || \
+       [[ "$text" =~ "Please log in" ]] || \
+       [[ "$text" =~ "Please sign in" ]]; then
+        return 0
+    fi
+    return 1
+}
+
+# Detectar errores de autenticación genéricos cuando el comando falló (status != 0)
 is_auth_error() {
     local text="${1,,}"
     if [[ "$text" =~ "auth" ]] || [[ "$text" =~ "login" ]] || [[ "$text" =~ "credential" ]] || \
@@ -105,6 +138,14 @@ is_auth_error() {
     fi
     return 1
 }
+
+# Primero evaluar si la salida (aún con status 0) contiene un prompt de autenticación claro
+if is_login_prompt "$AI_MSG"; then
+    echo ""
+    styled_err "ERROR DE AUTENTICACIÓN: No has iniciado sesión o no tienes credenciales válidas en OpenCode."
+    styled_info "Por favor, inicia sesión en OpenCode o verifica tu configuración de autenticación."
+    exit 1
+fi
 
 if [[ $OPENCODE_STATUS -ne 0 ]]; then
     echo ""
