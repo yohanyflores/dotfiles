@@ -2,10 +2,10 @@ customCommands:
   - key: '<a-c>'
     command: 'git-agy-commit'
     context: 'files'
-    subprocess: true
+    output: 'terminal'
     description: 'Generar mensaje de commit con agy (AI)'
-  - key: '<a-s-C>'
+  - key: '<a-s-c>'
     command: 'git-opencode-commit'
     context: 'files'
-    subprocess: true
+    output: 'terminal'
     description: 'Generar mensaje de commit con OpenCode (AI)'
