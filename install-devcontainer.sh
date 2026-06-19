@@ -213,6 +213,32 @@ create_symlink() {
     ln -s "$src" "$dest"
 }
 
+install_alpine_glibc() {
+    # 1. Verificar arquitectura
+    if [[ "$(uname -m)" != "x86_64" ]]; then
+        log_warn "agy requiere glibc y este bootstrap de glibc solo soporta Alpine x86_64. Omitiendo."
+        return 1
+    fi
+
+    # 2. Desinstalar gcompat si existe
+    if apk info -e gcompat >/dev/null 2>&1; then
+        run_sudo apk del gcompat || return 1
+    fi
+
+    # 3. Descargar e instalar glibc si no está presente
+    if ! apk info -e glibc >/dev/null 2>&1; then
+        log_info "Instalando glibc real (sgerrand) 2.35-r1..."
+        run_sudo apk add --no-cache ca-certificates wget || return 1
+        run_sudo wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub || return 1
+        run_sudo wget -q -O /tmp/glibc-2.35-r1.apk "https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.35-r1/glibc-2.35-r1.apk" || return 1
+        run_sudo apk add --no-cache /tmp/glibc-2.35-r1.apk || return 1
+        run_sudo rm -f /tmp/glibc-2.35-r1.apk
+    fi
+
+    # 4. Asegurar el enlace del dynamic linker
+    run_sudo ln -sfn /usr/glibc-compat/lib/ld-linux-x86-64.so.2 /lib/ld-linux-x86-64.so.2
+}
+
 # ==============================================================================
 # 1. INSTALACIÓN DE PAQUETES BÁSICOS DE DISTRO
 # ==============================================================================
@@ -239,8 +265,10 @@ if command -v apt-get >/dev/null 2>&1; then
 
 elif command -v apk >/dev/null 2>&1; then
     run_sudo apk update
-    apk_packages=(git curl unzip zip jq ripgrep fzf tmux fd neovim tree shellcheck gcompat libc6-compat)
+    apk_packages=(git curl unzip zip jq ripgrep fzf tmux fd neovim tree shellcheck)
     run_sudo apk add "${apk_packages[@]}"
+    
+    install_alpine_glibc || log_warn "No se pudo instalar glibc. Es posible que agy no funcione correctamente."
 fi
 
 # ==============================================================================
