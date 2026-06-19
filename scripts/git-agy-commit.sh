@@ -79,12 +79,46 @@ fi
 styled_header "⚡ Generando commit con AI..."
 
 set +e
-AI_MSG=$(git diff --staged | agy --print "Genera un mensaje de commit conciso para estos cambios. Devuelve ÚNICAMENTE el mensaje de commit crudo, sin formato markdown, sin bloques de código, sin comillas y sin explicaciones adicionales. Sigue el formato de Conventional Commits en español." 2>/dev/null)
+OUT_FILE=$(mktemp /tmp/agy_out_XXXXXX)
+ERR_FILE=$(mktemp /tmp/agy_err_XXXXXX)
+
+git diff --staged | agy --print "Genera un mensaje de commit conciso para estos cambios. Devuelve ÚNICAMENTE el mensaje de commit crudo, sin formato markdown, sin bloques de código, sin comillas y sin explicaciones adicionales. Sigue el formato de Conventional Commits en español." >"$OUT_FILE" 2>"$ERR_FILE"
 AGY_STATUS=$?
+
+AI_MSG=$(cat "$OUT_FILE")
+ERR_MSG=$(cat "$ERR_FILE")
+
+rm -f "$OUT_FILE" "$ERR_FILE"
 set -e
 
-if [[ $AGY_STATUS -ne 0 ]] || [[ -z "${AI_MSG// /}" ]]; then
-    styled_err "Fallo al generar el mensaje con agy."
+# Detectar errores de autenticación o problemas del agente
+is_auth_error() {
+    local text="${1,,}"
+    if [[ "$text" =~ "auth" ]] || [[ "$text" =~ "login" ]] || [[ "$text" =~ "credential" ]] || \
+       [[ "$text" =~ "token" ]] || [[ "$text" =~ "unauthorized" ]] || [[ "$text" =~ "permission" ]] || \
+       [[ "$text" =~ "api-key" ]] || [[ "$text" =~ "api key" ]] || [[ "$text" =~ "sign in" ]] || \
+       [[ "$text" =~ "signin" ]] || [[ "$text" =~ "sesión" ]] || [[ "$text" =~ "sesion" ]]; then
+        return 0
+    fi
+    return 1
+}
+
+if [[ $AGY_STATUS -ne 0 ]]; then
+    echo ""
+    if is_auth_error "$ERR_MSG" || is_auth_error "$AI_MSG"; then
+        styled_err "ERROR DE AUTENTICACIÓN: No has iniciado sesión o no tienes credenciales válidas en Antigravity (agy)."
+        styled_info "Por favor, ejecuta 'agy login' o verifica tu sesión de Antigravity."
+    else
+        styled_err "Fallo al generar el mensaje con agy (Código de salida: $AGY_STATUS)."
+        if [[ -n "${ERR_MSG// /}" ]]; then
+            styled_info "Detalle del error:\n$ERR_MSG"
+        fi
+    fi
+    exit 1
+fi
+
+if [[ -z "${AI_MSG// /}" ]]; then
+    styled_err "El mensaje generado por agy está vacío."
     exit 1
 fi
 

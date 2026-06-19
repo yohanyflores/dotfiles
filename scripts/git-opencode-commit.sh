@@ -80,14 +80,48 @@ styled_header "⚡ Generando commit con OpenCode (AI)..."
 
 set +e
 DIFF=$(git diff --staged)
-AI_MSG=$(opencode run "Genera un mensaje de commit Conventional Commit en español para el siguiente diff. Devuelve ÚNICAMENTE el mensaje de commit crudo en una sola línea, sin formato markdown, sin bloques de código, sin comillas y sin explicaciones adicionales:
+OUT_FILE=$(mktemp /tmp/opencode_out_XXXXXX)
+ERR_FILE=$(mktemp /tmp/opencode_err_XXXXXX)
 
-$DIFF" 2>/dev/null)
+opencode run "Genera un mensaje de commit Conventional Commit en español para el siguiente diff. Devuelve ÚNICAMENTE el mensaje de commit crudo en una sola línea, sin formato markdown, sin bloques de código, sin comillas y sin explicaciones adicionales:
+
+$DIFF" >"$OUT_FILE" 2>"$ERR_FILE"
 OPENCODE_STATUS=$?
+
+AI_MSG=$(cat "$OUT_FILE")
+ERR_MSG=$(cat "$ERR_FILE")
+
+rm -f "$OUT_FILE" "$ERR_FILE"
 set -e
 
-if [[ $OPENCODE_STATUS -ne 0 ]] || [[ -z "${AI_MSG// /}" ]]; then
-    styled_err "Fallo al generar el mensaje con opencode."
+# Detectar errores de autenticación
+is_auth_error() {
+    local text="${1,,}"
+    if [[ "$text" =~ "auth" ]] || [[ "$text" =~ "login" ]] || [[ "$text" =~ "credential" ]] || \
+       [[ "$text" =~ "token" ]] || [[ "$text" =~ "unauthorized" ]] || [[ "$text" =~ "permission" ]] || \
+       [[ "$text" =~ "api-key" ]] || [[ "$text" =~ "api key" ]] || [[ "$text" =~ "sign in" ]] || \
+       [[ "$text" =~ "signin" ]] || [[ "$text" =~ "sesión" ]] || [[ "$text" =~ "sesion" ]]; then
+        return 0
+    fi
+    return 1
+}
+
+if [[ $OPENCODE_STATUS -ne 0 ]]; then
+    echo ""
+    if is_auth_error "$ERR_MSG" || is_auth_error "$AI_MSG"; then
+        styled_err "ERROR DE AUTENTICACIÓN: No has iniciado sesión o no tienes credenciales válidas en OpenCode."
+        styled_info "Por favor, inicia sesión en OpenCode o verifica tu configuración de autenticación."
+    else
+        styled_err "Fallo al generar el mensaje con opencode (Código de salida: $OPENCODE_STATUS)."
+        if [[ -n "${ERR_MSG// /}" ]]; then
+            styled_info "Detalle del error:\n$ERR_MSG"
+        fi
+    fi
+    exit 1
+fi
+
+if [[ -z "${AI_MSG// /}" ]]; then
+    styled_err "El mensaje generado por OpenCode está vacío."
     exit 1
 fi
 
