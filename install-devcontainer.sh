@@ -290,11 +290,15 @@ if [[ "$DOTFILES_PROFILE" == "full" ]]; then
     fi
 
     # OpenCode CLI
-    if ! command -v opencode >/dev/null 2>&1; then
+    if ! command -v opencode >/dev/null 2>&1 && [ ! -f "$HOME/.opencode/bin/opencode" ]; then
         log_info "Instalando opencode cli..."
         if ! curl -fsSL https://opencode.ai/install | bash; then
             log_warn "No se pudo completar la instalación de opencode cli."
         fi
+    fi
+
+    if [ -f "$HOME/.opencode/bin/opencode" ]; then
+        create_symlink "$HOME/.opencode/bin/opencode" "$HOME/.local/bin/opencode"
     fi
 fi
 
