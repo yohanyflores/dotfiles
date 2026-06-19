@@ -239,7 +239,7 @@ if command -v apt-get >/dev/null 2>&1; then
 
 elif command -v apk >/dev/null 2>&1; then
     run_sudo apk update
-    apk_packages=(git curl unzip zip jq ripgrep fzf tmux fd neovim tree shellcheck gcompat)
+    apk_packages=(git curl unzip zip jq ripgrep fzf tmux fd neovim tree shellcheck gcompat libc6-compat)
     run_sudo apk add "${apk_packages[@]}"
 fi
 
