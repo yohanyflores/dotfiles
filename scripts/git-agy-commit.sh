@@ -9,6 +9,10 @@
 
 set -euo pipefail
 
+# --- Forzar UTF-8 para que los acentos se muestren bien en editores externos ---
+export LANG="${LANG:-C.UTF-8}"
+export LC_ALL="${LC_ALL:-C.UTF-8}"
+
 # --- Helpers ---
 HAS_GUM=false
 command -v gum >/dev/null 2>&1 && HAS_GUM=true
