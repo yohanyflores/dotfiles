@@ -4,7 +4,7 @@ customCommands:
     context: 'files'
     subprocess: true
     description: 'Generar mensaje de commit con agy (AI)'
-  - key: '<a-C>'
+  - key: '<a-s-C>'
     command: 'git-opencode-commit'
     context: 'files'
     subprocess: true
