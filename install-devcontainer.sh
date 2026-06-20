@@ -53,7 +53,7 @@ install_github_tool() {
     local asset_pattern="$4"
     local binary_inside_archive="${5:-$name}"
     local arch_mapped="${6:-}"
-    local tag_prefix="${7:-v}"
+    local tag_prefix="${7-v}"
     
     # 1. Comprobar si ya existe con la versión deseada
     if command -v "$name" >/dev/null 2>&1; then
