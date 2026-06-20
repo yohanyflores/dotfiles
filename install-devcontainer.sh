@@ -249,7 +249,13 @@ export PATH="$HOME/.local/bin:$PATH"
 if command -v apt-get >/dev/null 2>&1; then
     run_sudo apt-get update -y
     # Instalamos utilidades que siempre están en los repos y son de sistema
-    apt_packages=(git curl unzip zip jq ripgrep fzf tmux fd-find neovim tree shellcheck locales)
+    apt_packages=(git curl unzip zip jq ripgrep fzf tmux fd-find neovim tree shellcheck locales file ffmpeg p7zip-full poppler-utils fish)
+    
+    # Intentar añadir zoxide si está disponible en la distribución
+    if apt-cache show zoxide >/dev/null 2>&1; then
+        apt_packages+=(zoxide)
+    fi
+    
     run_sudo apt-get install -y "${apt_packages[@]}"
     
     # Generar locale UTF-8 para que editores como nano muestren acentos correctamente
@@ -265,10 +271,61 @@ if command -v apt-get >/dev/null 2>&1; then
 
 elif command -v apk >/dev/null 2>&1; then
     run_sudo apk update
-    apk_packages=(git curl unzip zip jq ripgrep fzf tmux fd neovim tree shellcheck)
+    apk_packages=(git curl unzip zip jq ripgrep fzf tmux fd neovim tree shellcheck musl-locales file ffmpeg 7zip poppler-utils zoxide fish)
+    
+    # Intentar añadir nerd-fonts si está disponible en los repositorios
+    if apk search -q nerd-fonts >/dev/null 2>&1; then
+        apk_packages+=(nerd-fonts)
+    fi
+    
     run_sudo apk add "${apk_packages[@]}"
     
     install_alpine_glibc || log_warn "No se pudo instalar glibc. Es posible que agy no funcione correctamente."
+fi
+
+# ==============================================================================
+# 1.5. INSTALACIÓN DE STARSHIP Y CONFIGURACIÓN DE SHELLS
+# ==============================================================================
+# Instalar Starship Prompt
+if ! command -v starship >/dev/null 2>&1; then
+    log_info "Instalando starship..."
+    if ! curl -sS https://starship.rs/install.sh | sh -s -- --yes --bin-dir "$HOME/.local/bin"; then
+        log_warn "No se pudo completar la instalación de starship."
+    fi
+fi
+
+# Configurar Starship en ~/.bashrc
+if [ -f "$HOME/.bashrc" ]; then
+    if ! grep -q "starship init bash" "$HOME/.bashrc" 2>/dev/null; then
+        echo -e '\n# Inicializar Starship Prompt\nif command -v starship >/dev/null 2>&1; then\n    eval "$(starship init bash)"\nfi' >> "$HOME/.bashrc"
+        log_info "Starship configurado en ~/.bashrc"
+    fi
+fi
+
+# Configurar Starship en ~/.zshrc
+if ! grep -q "starship init zsh" "$HOME/.zshrc" 2>/dev/null; then
+    echo -e '\n# Inicializar Starship Prompt\nif command -v starship >/dev/null 2>&1; then\n    eval "$(starship init zsh)"\nfi' >> "$HOME/.zshrc"
+    log_info "Starship configurado en ~/.zshrc"
+fi
+
+# Configurar Fish como shell por defecto
+if command -v fish >/dev/null 2>&1; then
+    current_user=$(whoami)
+    fish_path=$(command -v fish)
+    
+    # Asegurar que fish esté en /etc/shells
+    if ! grep -q "$fish_path" /etc/shells 2>/dev/null; then
+        log_info "Añadiendo $fish_path a /etc/shells..."
+        echo "$fish_path" | run_sudo tee -a /etc/shells >/dev/null
+    fi
+    
+    # Cambiar shell por defecto
+    log_info "Configurando fish como shell por defecto para $current_user..."
+    if command -v chsh >/dev/null 2>&1; then
+        run_sudo chsh -s "$fish_path" "$current_user" || log_warn "No se pudo cambiar el shell con chsh."
+    else
+        run_sudo sed -i "s|^${current_user}:\(.*\):[^:]*$|${current_user}:\1:${fish_path}|" /etc/passwd || log_warn "No se pudo cambiar el shell en /etc/passwd."
+    fi
 fi
 
 # ==============================================================================

@@ -9,6 +9,11 @@ if status is-interactive
     
     # Agregar binarios locales al PATH
     fish_add_path $HOME/.local/bin
+
+    # Inicializar Starship Prompt
+    if command -v starship >/dev/null 2>&1
+        starship init fish | source
+    fi
 end
 
 
