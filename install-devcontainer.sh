@@ -399,6 +399,7 @@ create_symlink "$DOTFILES_DIR/fish"   "$HOME/.config/fish"
 create_symlink "$DOTFILES_DIR/lazygit" "$HOME/.config/lazygit"
 create_symlink "$DOTFILES_DIR/scripts/git-agy-commit.sh" "$HOME/.local/bin/git-agy-commit"
 create_symlink "$DOTFILES_DIR/scripts/git-opencode-commit.sh" "$HOME/.local/bin/git-opencode-commit"
+create_symlink "$DOTFILES_DIR/starship/starship.toml" "$HOME/.config/starship.toml"
 
 # Persistencia de configuraciones de agentes (agy y opencode) en el espacio de trabajo
 WORKSPACE_DIR=""

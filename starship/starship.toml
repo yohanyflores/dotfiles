@@ -1,0 +1,11 @@
+# Configuración personalizada de Starship
+# ~/.config/starship.toml
+
+# Habilitar el módulo de visualización del shell activo
+[shell]
+disabled = false
+format = "via [$indicator]($style) "
+style = "bold cyan"
+bash_indicator = "bash"
+zsh_indicator = "zsh"
+fish_indicator = "fish"
