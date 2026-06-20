@@ -418,7 +418,7 @@ if [[ -f "$TOOLS_JSON" ]]; then
     fi
 
     # Leer herramientas del JSON e instalarlas
-    local _fonts_installed=false
+    _fonts_installed=false
     while read -r tool_info; do
         [[ -z "$tool_info" ]] && continue
         
@@ -431,7 +431,6 @@ if [[ -f "$TOOLS_JSON" ]]; then
         tag_prefix=$(echo "$tool_info" | jq -r '.tag_prefix // "v"')
         
         # Resolver arquitectura desde el JSON
-        local sys_arch
         sys_arch=$(uname -m)
         arch_mapped=$(echo "$tool_info" | jq -r --arg a "$sys_arch" '.arch[$a] // ""')
         
