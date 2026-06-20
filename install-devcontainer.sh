@@ -486,8 +486,10 @@ if [[ -n "$WORKSPACE_DIR" ]]; then
     log_info "Carpeta de persistencia detectada en: $WORKSPACE_DIR/.home"
     mkdir -p "$WORKSPACE_DIR/.home/.gemini"
     mkdir -p "$WORKSPACE_DIR/.home/.opencode"
+    mkdir -p "$WORKSPACE_DIR/.home/.local/share/opencode"
     create_symlink "$WORKSPACE_DIR/.home/.gemini"   "$HOME/.gemini"
     create_symlink "$WORKSPACE_DIR/.home/.opencode" "$HOME/.opencode"
+    create_symlink "$WORKSPACE_DIR/.home/.local/share/opencode" "$HOME/.local/share/opencode"
 else
     log_warn "No se detectó ninguna carpeta de persistencia (.home) en el espacio de trabajo. Omitiendo enlaces de agentes."
 fi
