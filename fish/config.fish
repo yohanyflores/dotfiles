@@ -13,7 +13,7 @@ if status is-interactive
     # Inicializar Starship Prompt
     if command -v starship >/dev/null 2>&1
         starship init fish | source
-    fi
+    end
 end
 
 

@@ -273,9 +273,9 @@ elif command -v apk >/dev/null 2>&1; then
     run_sudo apk update
     apk_packages=(git curl unzip zip jq ripgrep fzf tmux fd neovim tree shellcheck musl-locales file ffmpeg 7zip poppler-utils zoxide fish)
     
-    # Intentar añadir nerd-fonts si está disponible en los repositorios
-    if apk search -q nerd-fonts >/dev/null 2>&1; then
-        apk_packages+=(nerd-fonts)
+    # Intentar añadir nerd-fonts-all si está disponible en los repositorios
+    if apk search -q nerd-fonts-all >/dev/null 2>&1; then
+        apk_packages+=(nerd-fonts-all)
     fi
     
     run_sudo apk add "${apk_packages[@]}"
