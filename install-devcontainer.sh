@@ -53,7 +53,10 @@ install_github_tool() {
     local asset_pattern="$4"
     local binary_inside_archive="${5:-$name}"
     local arch_mapped="${6:-}"
-    local tag_prefix="${7-v}"
+    local tag_prefix="v"
+    if [[ $# -ge 7 ]]; then
+        tag_prefix="$7"
+    fi
     
     # 1. Comprobar si ya existe con la versión deseada
     if command -v "$name" >/dev/null 2>&1; then
@@ -75,9 +78,11 @@ install_github_tool() {
     local version_no_v="${expected_version#v}"
     local tag="${tag_prefix}${version_no_v}"
 
-    # Detectar libc (musl vs glibc)
+    # Detectar libc (musl vs glibc) y asegurar compatibilidad en Alpine
     local libc_suffix=""
-    if ldd --version 2>&1 | grep -qi musl; then
+    if command -v apk >/dev/null 2>&1 || \
+       ldd --version 2>&1 | grep -qi musl || \
+       ls /lib/ld-musl-*.so.1 >/dev/null 2>&1; then
         libc_suffix="-musl"
     fi
 
