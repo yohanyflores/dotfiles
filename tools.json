@@ -5,6 +5,7 @@
       "repo": "jesseduffield/lazygit",
       "version": "0.62.2",
       "pattern": "lazygit_${VERSION_NO_V}_Linux_${ARCH}.tar.gz",
+      "arch": { "x86_64": "x86_64", "aarch64": "arm64" },
       "profile": "core"
     },
     {
@@ -12,6 +13,8 @@
       "repo": "casey/just",
       "version": "1.53.0",
       "pattern": "just-${TAG}-${ARCH}-unknown-linux-musl.tar.gz",
+      "arch": { "x86_64": "x86_64", "aarch64": "aarch64" },
+      "tag_prefix": "",
       "profile": "core"
     },
     {
@@ -19,6 +22,7 @@
       "repo": "zellij-org/zellij",
       "version": "0.44.3",
       "pattern": "zellij-${ARCH}-unknown-linux-musl.tar.gz",
+      "arch": { "x86_64": "x86_64", "aarch64": "aarch64" },
       "profile": "core"
     },
     {
@@ -26,82 +30,15 @@
       "repo": "mikefarah/yq",
       "version": "4.53.3",
       "pattern": "yq_linux_${ARCH}",
+      "arch": { "x86_64": "amd64", "aarch64": "arm64" },
       "profile": "core"
-    },
-    {
-      "name": "bat",
-      "repo": "sharkdp/bat",
-      "version": "0.26.1",
-      "pattern": "bat-v${VERSION_NO_V}-${ARCH}-unknown-linux-musl.tar.gz",
-      "binary_inside": "bat",
-      "profile": "nice"
-    },
-    {
-      "name": "eza",
-      "repo": "eza-community/eza",
-      "version": "0.23.4",
-      "pattern": "eza_${ARCH}-unknown-linux-musl.tar.gz",
-      "binary_inside": "eza",
-      "profile": "nice"
-    },
-    {
-      "name": "delta",
-      "repo": "dandavison/delta",
-      "version": "0.19.2",
-      "pattern": "delta-${TAG}-${ARCH}-unknown-linux-musl.tar.gz",
-      "binary_inside": "delta",
-      "profile": "nice"
-    },
-    {
-      "name": "shfmt",
-      "repo": "mvdan/sh",
-      "version": "3.13.1",
-      "pattern": "shfmt_v${VERSION_NO_V}_linux_${ARCH}",
-      "profile": "nice"
-    },
-    {
-      "name": "xh",
-      "repo": "ducaale/xh",
-      "version": "0.26.1",
-      "pattern": "xh-v${VERSION_NO_V}-${ARCH}-unknown-linux-musl.tar.gz",
-      "binary_inside": "xh",
-      "profile": "nice"
-    },
-    {
-      "name": "yazi",
-      "repo": "sxyazi/yazi",
-      "version": "26.5.6",
-      "pattern": "yazi-${ARCH}-unknown-linux-musl.zip",
-      "binary_inside": "yazi",
-      "profile": "nice"
-    },
-    {
-      "name": "micro",
-      "repo": "zyedidia/micro",
-      "version": "2.0.15",
-      "pattern": "micro-${VERSION_NO_V}-${ARCH}.tar.gz",
-      "binary_inside": "micro",
-      "profile": "nice"
-    },
-    {
-      "name": "gomplate",
-      "repo": "hairyhenderson/gomplate",
-      "version": "5.1.0",
-      "pattern": "gomplate_linux-${ARCH}",
-      "profile": "nice"
-    },
-    {
-      "name": "gum",
-      "repo": "charmbracelet/gum",
-      "version": "0.17.0",
-      "pattern": "gum_${VERSION_NO_V}_Linux_${ARCH}.tar.gz",
-      "profile": "nice"
     },
     {
       "name": "mise",
       "repo": "jdx/mise",
       "version": "2026.6.11",
       "pattern": "mise-${TAG}-linux-${ARCH}${LIBC}.tar.gz",
+      "arch": { "x86_64": "x64", "aarch64": "arm64" },
       "binary_inside": "mise",
       "profile": "core"
     },
@@ -110,7 +47,87 @@
       "repo": "direnv/direnv",
       "version": "2.37.1",
       "pattern": "direnv.linux-${ARCH}",
+      "arch": { "x86_64": "amd64", "aarch64": "arm64" },
       "profile": "core"
+    },
+    {
+      "name": "bat",
+      "repo": "sharkdp/bat",
+      "version": "0.26.1",
+      "pattern": "bat-v${VERSION_NO_V}-${ARCH}-unknown-linux-musl.tar.gz",
+      "arch": { "x86_64": "x86_64", "aarch64": "aarch64" },
+      "binary_inside": "bat",
+      "profile": "nice"
+    },
+    {
+      "name": "eza",
+      "repo": "eza-community/eza",
+      "version": "0.23.4",
+      "pattern": "eza_${ARCH}-unknown-linux-musl.tar.gz",
+      "arch": { "x86_64": "x86_64", "aarch64": "aarch64" },
+      "binary_inside": "eza",
+      "profile": "nice"
+    },
+    {
+      "name": "delta",
+      "repo": "dandavison/delta",
+      "version": "0.19.2",
+      "pattern": "delta-${TAG}-${ARCH}-unknown-linux-musl.tar.gz",
+      "arch": { "x86_64": "x86_64", "aarch64": "aarch64" },
+      "binary_inside": "delta",
+      "tag_prefix": "",
+      "profile": "nice"
+    },
+    {
+      "name": "shfmt",
+      "repo": "mvdan/sh",
+      "version": "3.13.1",
+      "pattern": "shfmt_v${VERSION_NO_V}_linux_${ARCH}",
+      "arch": { "x86_64": "amd64", "aarch64": "arm64" },
+      "profile": "nice"
+    },
+    {
+      "name": "xh",
+      "repo": "ducaale/xh",
+      "version": "0.26.1",
+      "pattern": "xh-v${VERSION_NO_V}-${ARCH}-unknown-linux-musl.tar.gz",
+      "arch": { "x86_64": "x86_64", "aarch64": "aarch64" },
+      "binary_inside": "xh",
+      "profile": "nice"
+    },
+    {
+      "name": "yazi",
+      "repo": "sxyazi/yazi",
+      "version": "26.5.6",
+      "pattern": "yazi-${ARCH}-unknown-linux-musl.zip",
+      "arch": { "x86_64": "x86_64", "aarch64": "aarch64" },
+      "binary_inside": "yazi",
+      "profile": "nice"
+    },
+    {
+      "name": "micro",
+      "repo": "zyedidia/micro",
+      "version": "2.0.15",
+      "pattern": "micro-${VERSION_NO_V}-${ARCH}.tar.gz",
+      "arch": { "x86_64": "linux64-static", "aarch64": "linux-arm64-static" },
+      "binary_inside": "micro",
+      "profile": "nice"
+    },
+    {
+      "name": "gomplate",
+      "repo": "hairyhenderson/gomplate",
+      "version": "5.1.0",
+      "pattern": "gomplate_linux-${ARCH}",
+      "arch": { "x86_64": "amd64", "aarch64": "arm64" },
+      "profile": "nice"
+    },
+    {
+      "name": "gum",
+      "repo": "charmbracelet/gum",
+      "version": "0.17.0",
+      "pattern": "gum_${VERSION_NO_V}_Linux_${ARCH}.tar.gz",
+      "arch": { "x86_64": "x86_64", "aarch64": "arm64" },
+      "profile": "nice"
     },
     {
       "name": "JetBrainsMono",

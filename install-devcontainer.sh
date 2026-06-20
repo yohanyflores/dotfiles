@@ -52,6 +52,8 @@ install_github_tool() {
     local expected_version="$3"
     local asset_pattern="$4"
     local binary_inside_archive="${5:-$name}"
+    local arch_mapped="${6:-}"
+    local tag_prefix="${7:-v}"
     
     # 1. Comprobar si ya existe con la versión deseada
     if command -v "$name" >/dev/null 2>&1; then
@@ -65,40 +67,13 @@ install_github_tool() {
 
     # Determinar OS y arquitectura
     local os="linux"
-    local arch
-    arch=$(uname -m)
-    local arch_mapped="$arch"
-    
-    # Adaptación de arquitectura según los nombres de releases de cada herramienta
-    case "$name" in
-        lazygit|gum)
-            if [[ "$arch" == "x86_64" ]]; then arch_mapped="x86_64"; fi
-            if [[ "$arch" == "aarch64" ]]; then arch_mapped="arm64"; fi
-            ;;
-        just|zellij|bat|eza|delta|xh|yazi)
-            if [[ "$arch" == "x86_64" ]]; then arch_mapped="x86_64"; fi
-            if [[ "$arch" == "aarch64" ]]; then arch_mapped="aarch64"; fi
-            ;;
-        yq|shfmt|gomplate|direnv)
-            if [[ "$arch" == "x86_64" ]]; then arch_mapped="amd64"; fi
-            if [[ "$arch" == "aarch64" ]]; then arch_mapped="arm64"; fi
-            ;;
-        mise)
-            if [[ "$arch" == "x86_64" ]]; then arch_mapped="x64"; fi
-            if [[ "$arch" == "aarch64" ]]; then arch_mapped="arm64"; fi
-            ;;
-        micro)
-            if [[ "$arch" == "x86_64" ]]; then arch_mapped="linux64-static"; fi
-            if [[ "$arch" == "aarch64" ]]; then arch_mapped="linux-arm64-static"; fi
-            ;;
-    esac
-
-    # Resolver tags de releases (tags con o sin v)
-    local version_no_v="${expected_version#v}"
-    local tag="v${version_no_v}"
-    if [[ "$name" == "just" || "$name" == "delta" ]]; then
-        tag="$version_no_v"
+    if [[ -z "$arch_mapped" ]]; then
+        arch_mapped=$(uname -m)
     fi
+
+    # Resolver tag con el prefijo declarado en el JSON
+    local version_no_v="${expected_version#v}"
+    local tag="${tag_prefix}${version_no_v}"
 
     # Detectar libc (musl vs glibc)
     local libc_suffix=""
@@ -112,6 +87,7 @@ install_github_tool() {
     asset_name="${asset_name//\$\{VERSION_NO_V\}/$version_no_v}"
     asset_name="${asset_name//\$\{ARCH\}/$arch_mapped}"
     asset_name="${asset_name//\$\{LIBC\}/$libc_suffix}"
+
 
     # Rutas dentro del cache mount (persistente en el host)
     local cache_tool_dir="${CACHE_DIR}/${name}/${version_no_v}/${os}-${arch_mapped}"
@@ -452,13 +428,19 @@ if [[ -f "$TOOLS_JSON" ]]; then
         pattern=$(echo "$tool_info" | jq -r '.pattern')
         tool_type=$(echo "$tool_info" | jq -r '.type // "tool"')
         binary_inside=$(echo "$tool_info" | jq -r '.binary_inside // ""')
+        tag_prefix=$(echo "$tool_info" | jq -r '.tag_prefix // "v"')
+        
+        # Resolver arquitectura desde el JSON
+        local sys_arch
+        sys_arch=$(uname -m)
+        arch_mapped=$(echo "$tool_info" | jq -r --arg a "$sys_arch" '.arch[$a] // ""')
         
         if [[ "$tool_type" == "font" ]]; then
             log_info "Instalando fuente $name ($version)..."
             install_github_font "$name" "$repo" "$version" "$pattern" && _fonts_installed=true
         else
             log_info "Instalando $name ($version)..."
-            install_github_tool "$name" "$repo" "$version" "$pattern" "${binary_inside:-$name}"
+            install_github_tool "$name" "$repo" "$version" "$pattern" "${binary_inside:-$name}" "$arch_mapped" "$tag_prefix"
         fi
     done < <(jq -c ".tools[] | ${filter}" "$TOOLS_JSON")
     
