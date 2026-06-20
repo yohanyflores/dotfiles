@@ -331,7 +331,7 @@ if command -v apt-get >/dev/null 2>&1; then
 
 elif command -v apk >/dev/null 2>&1; then
     run_sudo apk update
-    apk_packages=(git curl unzip zip jq ripgrep fzf tmux fd neovim tree shellcheck musl-locales file ffmpeg 7zip poppler-utils zoxide fish)
+    apk_packages=(git curl unzip zip jq ripgrep fzf tmux fd neovim tree shellcheck musl-locales file ffmpeg 7zip poppler-utils zoxide fish libgcc libstdc++)
     
 
     run_sudo apk add "${apk_packages[@]}"
