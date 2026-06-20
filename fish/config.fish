@@ -14,6 +14,16 @@ if status is-interactive
     if command -v starship >/dev/null 2>&1
         starship init fish | source
     end
+
+    # Inicializar mise
+    if command -v mise >/dev/null 2>&1
+        mise activate fish | source
+    end
+
+    # Inicializar direnv
+    if command -v direnv >/dev/null 2>&1
+        direnv hook fish | source
+    end
 end
 
 

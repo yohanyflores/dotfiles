@@ -79,8 +79,12 @@ install_github_tool() {
             if [[ "$arch" == "x86_64" ]]; then arch_mapped="x86_64"; fi
             if [[ "$arch" == "aarch64" ]]; then arch_mapped="aarch64"; fi
             ;;
-        yq|shfmt|gomplate)
+        yq|shfmt|gomplate|direnv)
             if [[ "$arch" == "x86_64" ]]; then arch_mapped="amd64"; fi
+            if [[ "$arch" == "aarch64" ]]; then arch_mapped="arm64"; fi
+            ;;
+        mise)
+            if [[ "$arch" == "x86_64" ]]; then arch_mapped="x64"; fi
             if [[ "$arch" == "aarch64" ]]; then arch_mapped="arm64"; fi
             ;;
         micro)
@@ -96,11 +100,18 @@ install_github_tool() {
         tag="$version_no_v"
     fi
 
+    # Detectar libc (musl vs glibc)
+    local libc_suffix=""
+    if ldd --version 2>&1 | grep -qi musl; then
+        libc_suffix="-musl"
+    fi
+
     # Reemplazo de marcadores en el patrón de asset
     local asset_name="$asset_pattern"
     asset_name="${asset_name//\$\{TAG\}/$tag}"
     asset_name="${asset_name//\$\{VERSION_NO_V\}/$version_no_v}"
     asset_name="${asset_name//\$\{ARCH\}/$arch_mapped}"
+    asset_name="${asset_name//\$\{LIBC\}/$libc_suffix}"
 
     # Rutas dentro del cache mount (persistente en el host)
     local cache_tool_dir="${CACHE_DIR}/${name}/${version_no_v}/${os}-${arch_mapped}"
@@ -185,6 +196,79 @@ install_github_tool() {
     chmod +x "$HOME/.local/bin/$name"
     rm -rf "$tmp_extract_dir"
     log_info "Herramienta '$name' instalada en ~/.local/bin (Caché: $from_cache)"
+}
+
+# --- GITHUB FONT DOWNLOAD WITH CACHE ---
+install_github_font() {
+    local name="$1"
+    local repo="$2"
+    local expected_version="$3"
+    local asset_pattern="$4"
+    
+    local font_dir="$HOME/.local/share/fonts/$name"
+    
+    # 1. Comprobar si ya está instalada con la versión deseada
+    local version_marker="${font_dir}/.version"
+    if [[ -d "$font_dir" ]] && [[ -f "$version_marker" ]] && [[ "$(cat "$version_marker")" == "$expected_version" ]]; then
+        log_info "Fuente '$name' ya instalada con versión $expected_version. Saltando."
+        return 0
+    fi
+
+    # Resolver tag y asset
+    local version_no_v="${expected_version#v}"
+    local tag="v${version_no_v}"
+    
+    local asset_name="$asset_pattern"
+    asset_name="${asset_name//\$\{TAG\}/$tag}"
+    asset_name="${asset_name//\$\{VERSION_NO_V\}/$version_no_v}"
+    
+    # Rutas dentro del cache mount (persistente en el host)
+    local cache_font_dir="${CACHE_DIR}/fonts/${name}/${version_no_v}"
+    local cache_file="${cache_font_dir}/${asset_name}"
+    local from_cache=false
+    
+    # 2. Buscar en caché o descargar
+    if [[ -f "$cache_file" ]]; then
+        log_info "Fuente encontrada en caché local del host: $cache_file"
+        from_cache=true
+    else
+        log_info "Fuente no está en caché. Descargando desde GitHub..."
+        mkdir -p "$cache_font_dir"
+        
+        local download_url="https://github.com/${repo}/releases/download/${tag}/${asset_name}"
+        
+        local curl_opts=(-fsSL)
+        if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+            curl_opts+=(-H "Authorization: Bearer $GITHUB_TOKEN")
+        fi
+        
+        if ! curl "${curl_opts[@]}" -o "$cache_file" "$download_url"; then
+            log_error "Fallo al descargar fuente $name desde $download_url"
+            rm -f "$cache_file"
+            return 1
+        fi
+    fi
+    
+    # 3. Instalar en ~/.local/share/fonts/
+    mkdir -p "$font_dir"
+    
+    local tmp_extract_dir
+    tmp_extract_dir=$(mktemp -d)
+    
+    if [[ "$asset_name" == *.tar.gz ]]; then
+        tar -xzf "$cache_file" -C "$tmp_extract_dir"
+    elif [[ "$asset_name" == *.zip ]]; then
+        unzip -qo "$cache_file" -d "$tmp_extract_dir"
+    fi
+    
+    # Copiar solo archivos de fuentes (.ttf, .otf)
+    find "$tmp_extract_dir" -type f \( -name '*.ttf' -o -name '*.otf' \) -exec cp {} "$font_dir/" \;
+    
+    # Escribir marcador de versión
+    echo "$expected_version" > "$version_marker"
+    
+    rm -rf "$tmp_extract_dir"
+    log_info "Fuente '$name' instalada en $font_dir (Caché: $from_cache)"
 }
 
 # --- SYMLINKS CON RESPALDOS ---
@@ -273,11 +357,7 @@ elif command -v apk >/dev/null 2>&1; then
     run_sudo apk update
     apk_packages=(git curl unzip zip jq ripgrep fzf tmux fd neovim tree shellcheck musl-locales file ffmpeg 7zip poppler-utils zoxide fish)
     
-    # Intentar añadir nerd-fonts-all si está disponible en los repositorios
-    if apk search -q nerd-fonts-all >/dev/null 2>&1; then
-        apk_packages+=(nerd-fonts-all)
-    fi
-    
+
     run_sudo apk add "${apk_packages[@]}"
     
     install_alpine_glibc || log_warn "No se pudo instalar glibc. Es posible que agy no funcione correctamente."
@@ -300,12 +380,28 @@ if [ -f "$HOME/.bashrc" ]; then
         echo -e '\n# Inicializar Starship Prompt\nif command -v starship >/dev/null 2>&1; then\n    eval "$(starship init bash)"\nfi' >> "$HOME/.bashrc"
         log_info "Starship configurado en ~/.bashrc"
     fi
+    if ! grep -q "mise activate bash" "$HOME/.bashrc" 2>/dev/null; then
+        echo -e '\n# Inicializar mise\nif command -v mise >/dev/null 2>&1; then\n    eval "$(mise activate bash)"\nfi' >> "$HOME/.bashrc"
+        log_info "mise configurado en ~/.bashrc"
+    fi
+    if ! grep -q "direnv hook bash" "$HOME/.bashrc" 2>/dev/null; then
+        echo -e '\n# Inicializar direnv\nif command -v direnv >/dev/null 2>&1; then\n    eval "$(direnv hook bash)"\nfi' >> "$HOME/.bashrc"
+        log_info "direnv configurado en ~/.bashrc"
+    fi
 fi
 
 # Configurar Starship en ~/.zshrc
 if ! grep -q "starship init zsh" "$HOME/.zshrc" 2>/dev/null; then
     echo -e '\n# Inicializar Starship Prompt\nif command -v starship >/dev/null 2>&1; then\n    eval "$(starship init zsh)"\nfi' >> "$HOME/.zshrc"
     log_info "Starship configurado en ~/.zshrc"
+fi
+if ! grep -q "mise activate zsh" "$HOME/.zshrc" 2>/dev/null; then
+    echo -e '\n# Inicializar mise\nif command -v mise >/dev/null 2>&1; then\n    eval "$(mise activate zsh)"\nfi' >> "$HOME/.zshrc"
+    log_info "mise configurado en ~/.zshrc"
+fi
+if ! grep -q "direnv hook zsh" "$HOME/.zshrc" 2>/dev/null; then
+    echo -e '\n# Inicializar direnv\nif command -v direnv >/dev/null 2>&1; then\n    eval "$(direnv hook zsh)"\nfi' >> "$HOME/.zshrc"
+    log_info "direnv configurado en ~/.zshrc"
 fi
 
 # Configurar Fish como shell por defecto
@@ -346,6 +442,7 @@ if [[ -f "$TOOLS_JSON" ]]; then
     fi
 
     # Leer herramientas del JSON e instalarlas
+    local _fonts_installed=false
     while read -r tool_info; do
         [[ -z "$tool_info" ]] && continue
         
@@ -353,11 +450,23 @@ if [[ -f "$TOOLS_JSON" ]]; then
         repo=$(echo "$tool_info" | jq -r '.repo')
         version=$(echo "$tool_info" | jq -r '.version')
         pattern=$(echo "$tool_info" | jq -r '.pattern')
+        tool_type=$(echo "$tool_info" | jq -r '.type // "tool"')
         binary_inside=$(echo "$tool_info" | jq -r '.binary_inside // ""')
         
-        log_info "Instalando $name ($version)..."
-        install_github_tool "$name" "$repo" "$version" "$pattern" "${binary_inside:-$name}"
+        if [[ "$tool_type" == "font" ]]; then
+            log_info "Instalando fuente $name ($version)..."
+            install_github_font "$name" "$repo" "$version" "$pattern" && _fonts_installed=true
+        else
+            log_info "Instalando $name ($version)..."
+            install_github_tool "$name" "$repo" "$version" "$pattern" "${binary_inside:-$name}"
+        fi
     done < <(jq -c ".tools[] | ${filter}" "$TOOLS_JSON")
+    
+    # Reconstruir caché de fuentes si se instaló alguna
+    if [[ "$_fonts_installed" == "true" ]] && command -v fc-cache >/dev/null 2>&1; then
+        log_info "Actualizando caché de fuentes del sistema..."
+        fc-cache -f 2>/dev/null || true
+    fi
 else
     log_warn "No se encontró el archivo tools.json. Omitiendo instalación de GitHub tools."
 fi

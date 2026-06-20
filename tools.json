@@ -62,7 +62,7 @@
     {
       "name": "xh",
       "repo": "ducaale/xh",
-      "version": "0.25.3",
+      "version": "0.26.1",
       "pattern": "xh-v${VERSION_NO_V}-${ARCH}-unknown-linux-musl.tar.gz",
       "binary_inside": "xh",
       "profile": "nice"
@@ -95,6 +95,61 @@
       "repo": "charmbracelet/gum",
       "version": "0.17.0",
       "pattern": "gum_${VERSION_NO_V}_Linux_${ARCH}.tar.gz",
+      "profile": "nice"
+    },
+    {
+      "name": "mise",
+      "repo": "jdx/mise",
+      "version": "2026.6.11",
+      "pattern": "mise-${TAG}-linux-${ARCH}${LIBC}.tar.gz",
+      "binary_inside": "mise",
+      "profile": "core"
+    },
+    {
+      "name": "direnv",
+      "repo": "direnv/direnv",
+      "version": "2.37.1",
+      "pattern": "direnv.linux-${ARCH}",
+      "profile": "core"
+    },
+    {
+      "name": "JetBrainsMono",
+      "repo": "ryanoasis/nerd-fonts",
+      "version": "3.4.0",
+      "pattern": "JetBrainsMono.zip",
+      "type": "font",
+      "profile": "nice"
+    },
+    {
+      "name": "FiraCode",
+      "repo": "ryanoasis/nerd-fonts",
+      "version": "3.4.0",
+      "pattern": "FiraCode.zip",
+      "type": "font",
+      "profile": "nice"
+    },
+    {
+      "name": "Hack",
+      "repo": "ryanoasis/nerd-fonts",
+      "version": "3.4.0",
+      "pattern": "Hack.zip",
+      "type": "font",
+      "profile": "nice"
+    },
+    {
+      "name": "CascadiaCode",
+      "repo": "ryanoasis/nerd-fonts",
+      "version": "3.4.0",
+      "pattern": "CascadiaCode.zip",
+      "type": "font",
+      "profile": "nice"
+    },
+    {
+      "name": "SourceCodePro",
+      "repo": "ryanoasis/nerd-fonts",
+      "version": "3.4.0",
+      "pattern": "SourceCodePro.zip",
+      "type": "font",
       "profile": "nice"
     }
   ]
