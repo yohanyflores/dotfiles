@@ -840,7 +840,9 @@ action_attach() {
     fi
 
     local shell_cmd
-    if devcontainer exec --workspace-folder "$PWD" --config "$CONFIG_FOR_CLI" bash -c "exit 0" >/dev/null 2>&1; then
+    if devcontainer exec --workspace-folder "$PWD" --config "$CONFIG_FOR_CLI" fish -c "exit 0" >/dev/null 2>&1; then
+        shell_cmd="fish"
+    elif devcontainer exec --workspace-folder "$PWD" --config "$CONFIG_FOR_CLI" bash -c "exit 0" >/dev/null 2>&1; then
         shell_cmd="bash"
     else
         shell_cmd="sh"
