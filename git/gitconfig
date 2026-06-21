@@ -8,9 +8,22 @@
 [core]
     editor = nvim
     excludesfile = ~/.gitignore_global
+    pager = delta
 
 [init]
     defaultBranch = main
+
+[interactive]
+    diffFilter = delta --color-only
+
+[delta]
+    navigate = true
+    side-by-side = true
+    line-numbers = true
+    syntax-theme = Coldark-Dark
+
+[merge]
+    conflictstyle = zdiff3
 
 [alias]
     co = checkout
