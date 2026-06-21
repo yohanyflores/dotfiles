@@ -15,16 +15,21 @@ return {
             "neovim/nvim-lspconfig",
         },
         config = function()
+            -- Base list of LSPs that do NOT depend on Node.js/npm
             local servers = {
-                "bashls",      -- Bash
-                "html",        -- HTML
-                "pyright",     -- Python
-                "ts_ls",       -- JavaScript / TypeScript
-                "gopls",       -- Golang
-                "clojure_lsp", -- Clojure
-                "jdtls",       -- Java
-                "sqlls",       -- SQL
+                "gopls",       -- Golang (Go binary)
+                "clojure_lsp", -- Clojure (Native binary)
+                "jdtls",       -- Java (Java jar/binary)
             }
+
+            -- Dynamically add npm-dependent LSPs ONLY if node and npm are executable
+            if vim.fn.executable("node") == 1 and vim.fn.executable("npm") == 1 then
+                table.insert(servers, "bashls")      -- Bash
+                table.insert(servers, "html")        -- HTML
+                table.insert(servers, "pyright")     -- Python
+                table.insert(servers, "ts_ls")       -- JavaScript / TypeScript
+                table.insert(servers, "sqlls")       -- SQL
+            end
 
             require("mason-lspconfig").setup({
                 ensure_installed = servers,
