@@ -1,6 +1,9 @@
 -- Save file with Ctrl+S
 vim.keymap.set("n", "<C-s>", ":w<CR>", { desc = "Save file", silent = true })
 
+-- Disable default space bar behavior (moving cursor) so it acts purely as a silent Leader key
+vim.keymap.set({ "n", "v" }, "<Space>", "<Nop>", { silent = true })
+
 -- Clear search highlight on pressing Esc
 vim.keymap.set("n", "<Esc>", "<cmd>nohlsearch<CR>", { desc = "Clear search highlight" })
 
