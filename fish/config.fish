@@ -5,6 +5,10 @@
 set -gx LANG en_US.UTF-8
 set -gx LC_ALL en_US.UTF-8
 
+# Definir Neovim como editor por defecto del sistema
+set -gx EDITOR nvim
+set -gx VISUAL nvim
+
 if status is-interactive
     # Comandos a ejecutar en sesiones interactivas
     alias l="la -la"

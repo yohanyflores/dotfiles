@@ -373,6 +373,10 @@ if [ -f "$HOME/.bashrc" ]; then
         echo -e '\n# Configuración de locale UTF-8\nexport LANG=en_US.UTF-8\nexport LC_ALL=en_US.UTF-8' >> "$HOME/.bashrc"
         log_info "Locale UTF-8 configurado en ~/.bashrc"
     fi
+    if ! grep -q "export EDITOR=" "$HOME/.bashrc" 2>/dev/null; then
+        echo -e '\n# Editor predeterminado del sistema\nexport EDITOR=nvim\nexport VISUAL=nvim' >> "$HOME/.bashrc"
+        log_info "Editor por defecto configurado en ~/.bashrc"
+    fi
     if ! grep -q "starship init bash" "$HOME/.bashrc" 2>/dev/null; then
         echo -e '\n# Inicializar Starship Prompt\nif command -v starship >/dev/null 2>&1; then\n    eval "$(starship init bash)"\nfi' >> "$HOME/.bashrc"
         log_info "Starship configurado en ~/.bashrc"
@@ -394,6 +398,10 @@ if [ -f "$HOME/.zshrc" ] || [ ! -e "$HOME/.zshrc" ]; then
     if ! grep -q "export LANG=" "$HOME/.zshrc" 2>/dev/null; then
         echo -e '\n# Configuración de locale UTF-8\nexport LANG=en_US.UTF-8\nexport LC_ALL=en_US.UTF-8' >> "$HOME/.zshrc"
         log_info "Locale UTF-8 configurado en ~/.zshrc"
+    fi
+    if ! grep -q "export EDITOR=" "$HOME/.zshrc" 2>/dev/null; then
+        echo -e '\n# Editor predeterminado del sistema\nexport EDITOR=nvim\nexport VISUAL=nvim' >> "$HOME/.zshrc"
+        log_info "Editor por defecto configurado en ~/.zshrc"
     fi
     if ! grep -q "starship init zsh" "$HOME/.zshrc" 2>/dev/null; then
         echo -e '\n# Inicializar Starship Prompt\nif command -v starship >/dev/null 2>&1; then\n    eval "$(starship init zsh)"\nfi' >> "$HOME/.zshrc"
