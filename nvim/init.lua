@@ -1,11 +1,10 @@
--- Place your personal Neovim configurations here
--- ~/.config/nvim/init.lua
+-- Set mapleader to space before loading lazy.nvim so plugins can use it
+vim.g.mapleader = " "
+vim.g.maplocalleader = " "
 
-vim.opt.number = true
-vim.opt.relativenumber = true
-vim.opt.shiftwidth = 4
-vim.opt.tabstop = 4
-vim.opt.expandtab = true
-vim.opt.smartindent = true
+-- Load core options and keymaps
+require("config.options")
+require("config.keymaps")
 
-print("Neovim cargado exitosamente desde dotfiles!")
+-- Load and setup lazy.nvim
+require("config.lazy")

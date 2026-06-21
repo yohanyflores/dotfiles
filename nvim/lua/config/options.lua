@@ -1,0 +1,26 @@
+-- Set line numbering (relative)
+vim.opt.number = true
+vim.opt.relativenumber = true
+
+-- Tab and indentation settings
+vim.opt.shiftwidth = 4
+vim.opt.tabstop = 4
+vim.opt.expandtab = true
+vim.opt.smartindent = true
+
+-- Search settings
+vim.opt.ignorecase = true
+vim.opt.smartcase = true
+
+-- UI settings
+vim.opt.termguicolors = true
+vim.opt.signcolumn = "yes"
+vim.opt.updatetime = 250
+vim.opt.timeoutlen = 300
+
+-- Clipboard integration (system clipboard integration)
+vim.opt.clipboard = "unnamedplus"
+
+-- Split directions
+vim.opt.splitright = true
+vim.opt.splitbelow = true
