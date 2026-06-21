@@ -1,6 +1,10 @@
 # Configuración básica de Fish
 # ~/.config/fish/config.fish
 
+# Configuración de locale UTF-8 para soporte de acentos y caracteres especiales
+set -gx LANG en_US.UTF-8
+set -gx LC_ALL en_US.UTF-8
+
 if status is-interactive
     # Comandos a ejecutar en sesiones interactivas
     alias l="la -la"
