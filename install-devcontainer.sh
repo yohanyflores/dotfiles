@@ -344,6 +344,18 @@ elif command -v apk >/dev/null 2>&1; then
     install_alpine_glibc || log_warn "No se pudo instalar glibc. Es posible que agy no funcione correctamente."
 fi
 
+# --- CONFIGURACIÓN DE LOCALE GLOBAL EN EL SISTEMA ---
+log_info "Configurando locale UTF-8 global..."
+if command -v update-locale >/dev/null 2>&1; then
+    run_sudo update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 || true
+fi
+
+# Escribir en profile.d para que afecte a todas las sesiones y shells no-interactivas
+if [ -d /etc/profile.d ]; then
+    echo -e 'export LANG=en_US.UTF-8\nexport LC_ALL=en_US.UTF-8' | run_sudo tee /etc/profile.d/locale.sh >/dev/null
+    run_sudo chmod +x /etc/profile.d/locale.sh 2>/dev/null || true
+fi
+
 # ==============================================================================
 # 1.5. INSTALACIÓN DE STARSHIP Y CONFIGURACIÓN DE SHELLS
 # ==============================================================================
@@ -357,6 +369,10 @@ fi
 
 # Configurar Starship en ~/.bashrc
 if [ -f "$HOME/.bashrc" ]; then
+    if ! grep -q "export LANG=" "$HOME/.bashrc" 2>/dev/null; then
+        echo -e '\n# Configuración de locale UTF-8\nexport LANG=en_US.UTF-8\nexport LC_ALL=en_US.UTF-8' >> "$HOME/.bashrc"
+        log_info "Locale UTF-8 configurado en ~/.bashrc"
+    fi
     if ! grep -q "starship init bash" "$HOME/.bashrc" 2>/dev/null; then
         echo -e '\n# Inicializar Starship Prompt\nif command -v starship >/dev/null 2>&1; then\n    eval "$(starship init bash)"\nfi' >> "$HOME/.bashrc"
         log_info "Starship configurado en ~/.bashrc"
@@ -372,17 +388,25 @@ if [ -f "$HOME/.bashrc" ]; then
 fi
 
 # Configurar Starship en ~/.zshrc
-if ! grep -q "starship init zsh" "$HOME/.zshrc" 2>/dev/null; then
-    echo -e '\n# Inicializar Starship Prompt\nif command -v starship >/dev/null 2>&1; then\n    eval "$(starship init zsh)"\nfi' >> "$HOME/.zshrc"
-    log_info "Starship configurado en ~/.zshrc"
-fi
-if ! grep -q "mise activate zsh" "$HOME/.zshrc" 2>/dev/null; then
-    echo -e '\n# Inicializar mise\nif command -v mise >/dev/null 2>&1; then\n    eval "$(mise activate zsh)"\nfi' >> "$HOME/.zshrc"
-    log_info "mise configurado en ~/.zshrc"
-fi
-if ! grep -q "direnv hook zsh" "$HOME/.zshrc" 2>/dev/null; then
-    echo -e '\n# Inicializar direnv\nif command -v direnv >/dev/null 2>&1; then\n    eval "$(direnv hook zsh)"\nfi' >> "$HOME/.zshrc"
-    log_info "direnv configurado en ~/.zshrc"
+# Asegurar que el archivo existe si usamos zsh
+if [ -f "$HOME/.zshrc" ] || [ ! -e "$HOME/.zshrc" ]; then
+    touch "$HOME/.zshrc"
+    if ! grep -q "export LANG=" "$HOME/.zshrc" 2>/dev/null; then
+        echo -e '\n# Configuración de locale UTF-8\nexport LANG=en_US.UTF-8\nexport LC_ALL=en_US.UTF-8' >> "$HOME/.zshrc"
+        log_info "Locale UTF-8 configurado en ~/.zshrc"
+    fi
+    if ! grep -q "starship init zsh" "$HOME/.zshrc" 2>/dev/null; then
+        echo -e '\n# Inicializar Starship Prompt\nif command -v starship >/dev/null 2>&1; then\n    eval "$(starship init zsh)"\nfi' >> "$HOME/.zshrc"
+        log_info "Starship configurado en ~/.zshrc"
+    fi
+    if ! grep -q "mise activate zsh" "$HOME/.zshrc" 2>/dev/null; then
+        echo -e '\n# Inicializar mise\nif command -v mise >/dev/null 2>&1; then\n    eval "$(mise activate zsh)"\nfi' >> "$HOME/.zshrc"
+        log_info "mise configurado en ~/.zshrc"
+    fi
+    if ! grep -q "direnv hook zsh" "$HOME/.zshrc" 2>/dev/null; then
+        echo -e '\n# Inicializar direnv\nif command -v direnv >/dev/null 2>&1; then\n    eval "$(direnv hook zsh)"\nfi' >> "$HOME/.zshrc"
+        log_info "direnv configurado en ~/.zshrc"
+    fi
 fi
 
 # Configurar Fish como shell por defecto
