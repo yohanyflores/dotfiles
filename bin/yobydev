@@ -605,6 +605,9 @@ try {
     config.remoteEnv.GITHUB_TOKEN = "${localEnv:GITHUB_TOKEN}";
   }
 
+  // Forzar soporte de color de 24 bits (True Color) sobre SSH
+  config.remoteEnv.COLORTERM = "truecolor";
+
   fs.writeFileSync(overrideFile, JSON.stringify(config, null, 2), "utf8");
 } catch (e) {
   console.error("Fallo al generar el archivo de override fusionado:", e.message);
