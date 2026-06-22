@@ -243,12 +243,15 @@ install_latest_neovim() {
     chmod +x "$HOME/.local/bin/nvim"
 
     # Validar si el binario realmente funciona (musl/glibc check)
-    if "$HOME/.local/bin/nvim" --version >/dev/null 2>&1; then
+    local nvim_err
+    if nvim_err=$("$HOME/.local/bin/nvim" --version 2>&1); then
       log_info "Neovim ($expected_version) instalado con éxito en ~/.local (Caché: $from_cache)"
       rm -rf "$tmp_extract_dir"
       return 0
     else
-      log_warn "El binario descargado de Neovim no funciona (posible incompatibilidad de libc). Revirtiendo al del sistema."
+      log_warn "El binario descargado de Neovim no funciona. Detalle del error:"
+      log_warn "$nvim_err"
+      log_warn "Revirtiendo al del sistema."
       rm -f "$HOME/.local/bin/nvim"
       rm -rf "$HOME/.local/share/nvim"
       rm -rf "$HOME/.local/lib/nvim"
