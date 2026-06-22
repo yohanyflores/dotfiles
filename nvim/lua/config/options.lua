@@ -17,9 +17,6 @@ vim.opt.termguicolors = true
 vim.opt.signcolumn = "yes"
 vim.opt.updatetime = 250
 vim.opt.timeoutlen = 300
-vim.opt.laststatus = 3   -- Barra de estado global única al final de la pantalla
-vim.opt.showmode = false   -- Ocultar el modo de texto duplicado abajo
-vim.opt.ruler = true       -- Mantener el ruler activo al fondo para mostrar posición detallada
 
 -- Clipboard integration (system clipboard integration)
 vim.opt.clipboard = "unnamedplus"
