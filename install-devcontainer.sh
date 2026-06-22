@@ -180,7 +180,7 @@ install_github_tool() {
 
 # --- NEOCACHE NEOMIN INSTALLER ---
 install_latest_neovim() {
-  local expected_version="v0.12.3"
+  local expected_version="v0.11.7"
   local version_no_v="${expected_version#v}"
   local name="neovim"
   local os="linux"
