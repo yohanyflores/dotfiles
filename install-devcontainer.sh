@@ -665,6 +665,7 @@ log_info "Aplicando enlaces de configuración desde: $DOTFILES_DIR"
 
 create_symlink "$DOTFILES_DIR/nvim" "$HOME/.config/nvim"
 create_symlink "$DOTFILES_DIR/lazyvim" "$HOME/.config/lazyvim"
+create_symlink "$DOTFILES_DIR/micro" "$HOME/.config/micro"
 create_symlink "$DOTFILES_DIR/zellij" "$HOME/.config/zellij"
 create_symlink "$DOTFILES_DIR/tmux" "$HOME/.config/tmux"
 create_symlink "$DOTFILES_DIR/fish" "$HOME/.config/fish"
