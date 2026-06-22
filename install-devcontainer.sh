@@ -260,7 +260,12 @@ install_latest_neovim() {
       # Si estamos en Alpine, intentamos instalar el Neovim moderno (v0.12+) desde el repositorio Edge
       if command -v apk >/dev/null 2>&1; then
           log_info "Instalando Neovim v0.12+ nativo para Alpine desde el repositorio Edge..."
-          run_sudo apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community neovim
+          if run_sudo apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community neovim; then
+              return 0
+          fi
+      else
+          # En Debian/Ubuntu ya se instaló el del sistema, por lo que la recuperación es exitosa
+          return 0
       fi
       return 1
     fi
