@@ -253,6 +253,12 @@ install_latest_neovim() {
       rm -rf "$HOME/.local/share/nvim"
       rm -rf "$HOME/.local/lib/nvim"
       rm -rf "$tmp_extract_dir"
+      
+      # Si estamos en Alpine, intentamos instalar el Neovim moderno (v0.12+) desde el repositorio Edge
+      if command -v apk >/dev/null 2>&1; then
+          log_info "Instalando Neovim v0.12+ nativo para Alpine desde el repositorio Edge..."
+          run_sudo apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community neovim
+      fi
       return 1
     fi
   else
