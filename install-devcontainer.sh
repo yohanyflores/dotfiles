@@ -476,6 +476,10 @@ if [ -f "$HOME/.bashrc" ]; then
     echo -e '\n# Editor predeterminado del sistema\nexport EDITOR=nvim\nexport VISUAL=nvim' >>"$HOME/.bashrc"
     log_info "Editor por defecto configurado en ~/.bashrc"
   fi
+  if ! grep -q "alias lv=" "$HOME/.bashrc" 2>/dev/null; then
+    echo -e '\n# Alias para LazyVim en paralelo\nalias lv="env NVIM_APPNAME=lazyvim nvim"' >>"$HOME/.bashrc"
+    log_info "Alias lv para LazyVim configurado en ~/.bashrc"
+  fi
   if ! grep -q "starship init bash" "$HOME/.bashrc" 2>/dev/null; then
     echo -e '\n# Inicializar Starship Prompt\nif command -v starship >/dev/null 2>&1; then\n    eval "$(starship init bash)"\nfi' >>"$HOME/.bashrc"
     log_info "Starship configurado en ~/.bashrc"
@@ -501,6 +505,10 @@ if [ -f "$HOME/.zshrc" ] || [ ! -e "$HOME/.zshrc" ]; then
   if ! grep -q "export EDITOR=" "$HOME/.zshrc" 2>/dev/null; then
     echo -e '\n# Editor predeterminado del sistema\nexport EDITOR=nvim\nexport VISUAL=nvim' >>"$HOME/.zshrc"
     log_info "Editor por defecto configurado en ~/.zshrc"
+  fi
+  if ! grep -q "alias lv=" "$HOME/.zshrc" 2>/dev/null; then
+    echo -e '\n# Alias para LazyVim en paralelo\nalias lv="env NVIM_APPNAME=lazyvim nvim"' >>"$HOME/.zshrc"
+    log_info "Alias lv para LazyVim configurado en ~/.zshrc"
   fi
   if ! grep -q "starship init zsh" "$HOME/.zshrc" 2>/dev/null; then
     echo -e '\n# Inicializar Starship Prompt\nif command -v starship >/dev/null 2>&1; then\n    eval "$(starship init zsh)"\nfi' >>"$HOME/.zshrc"
@@ -656,6 +664,7 @@ fi
 log_info "Aplicando enlaces de configuración desde: $DOTFILES_DIR"
 
 create_symlink "$DOTFILES_DIR/nvim" "$HOME/.config/nvim"
+create_symlink "$DOTFILES_DIR/lazyvim" "$HOME/.config/lazyvim"
 create_symlink "$DOTFILES_DIR/zellij" "$HOME/.config/zellij"
 create_symlink "$DOTFILES_DIR/tmux" "$HOME/.config/tmux"
 create_symlink "$DOTFILES_DIR/fish" "$HOME/.config/fish"

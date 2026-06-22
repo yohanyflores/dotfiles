@@ -14,6 +14,7 @@ if status is-interactive
     alias l="la -la"
     alias g="git"
     alias v="nvim"
+    alias lv="env NVIM_APPNAME=lazyvim nvim"
     
     # Agregar binarios locales al PATH
     fish_add_path $HOME/.local/bin
