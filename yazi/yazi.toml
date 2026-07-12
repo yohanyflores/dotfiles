@@ -1,0 +1,24 @@
+[mgr]
+mouse_events = [ "click", "scroll", "touch", "move", "drag" ]
+
+[opener]
+gimp =   [ { run = 'gimp "$@"', desc = "GIMP", block = false, orphan = true } ]
+kolourpaint = [ { run = 'kolourpaint %s', desc = "Paint Program by KDE", block = false, orphan = true } ]
+chrome = [ { run = 'google-chrome-stable "$@"', desc = "Chrome", block = false, orphan = true } ]
+xdg = [
+	{
+		run = 'xdg-open "$@"',
+		desc = 'Abrir con xdg-open',
+		for = "linux"
+	}
+]
+
+
+[open]
+prepend_rules = [
+	{mime = "image/*", use =  ["gimp", "kolourpaint", "chrome"] }
+	#{mime = "*", use = ["xdg"]}
+]
+append_rules = [
+
+]
