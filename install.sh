@@ -201,6 +201,7 @@ create_symlink "$DOTFILES_DIR/lazygit" "$HOME/.config/lazygit"
 create_symlink "$DOTFILES_DIR/scripts/git-agy-commit.sh" "$HOME/.local/bin/git-agy-commit"
 create_symlink "$DOTFILES_DIR/scripts/git-opencode-commit.sh" "$HOME/.local/bin/git-opencode-commit"
 create_symlink "$DOTFILES_DIR/starship/starship.toml" "$HOME/.config/starship.toml"
+create_symlink "$DOTFILES_DIR/yazi" "$HOME/.config/yazi"
 
 if [[ -f "$DOTFILES_DIR/git/gitconfig" ]]; then
   create_symlink "$DOTFILES_DIR/git/gitconfig" "$HOME/.gitconfig"
