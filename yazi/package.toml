@@ -1,14 +1,4 @@
 [[plugin.deps]]
-use = "yazi-rs/plugins:mount"
-rev = "c2c16c8"
-hash = "e3260d0b1feded8c8e3ae3afa1169e30"
-
-[[plugin.deps]]
-use = "uhs-robert/sshfs"
-rev = "a8b8903"
-hash = "8c1b36103121a66b37308afaf7124575"
-
-[[plugin.deps]]
 use = "stelcodes/bunny"
 rev = "71b14a3"
 hash = "18a2829738214fe9bca99a2fef19113d"
