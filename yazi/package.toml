@@ -6,5 +6,8 @@ hash = "18a2829738214fe9bca99a2fef19113d"
 [[plugin.deps]]
 use = "yazi-rs/plugins:git"
 
+[[plugin.deps]]
+use = "ahkohd/eza-preview"
+
 [flavor]
 deps = []
