@@ -219,6 +219,12 @@ if ! grep -q "local/bin" "$HOME/.bashrc" 2>/dev/null; then
   log_info "PATH local agregado a ~/.bashrc"
 fi
 
+# Instalar todos los plugins definidos en package.toml
+if command -v ya >/dev/null 2>&1; then
+    echo "Instalando plugins de Yazi..."
+    ya pack -i
+fi
+
 # Crear marcador de éxito para yobydev / devcontainers
 mkdir -p "$HOME/.devcontainer"
 touch "$HOME/.devcontainer/.dotfilesSuccess"
