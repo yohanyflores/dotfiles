@@ -1,4 +1,4 @@
--- require("sshfs"):setup()
+require("sshfs"):setup()
 
 -- You can configure your bookmarks by lua language
 local path_sep = package.config:sub(1, 1)

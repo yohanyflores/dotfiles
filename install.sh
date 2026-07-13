@@ -222,7 +222,7 @@ fi
 # Instalar todos los plugins definidos en package.toml
 if command -v ya >/dev/null 2>&1; then
     echo "Instalando plugins de Yazi..."
-    ya pack -i
+    ya pkg install
 fi
 
 # Crear marcador de éxito para yobydev / devcontainers
