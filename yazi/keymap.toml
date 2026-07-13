@@ -1,15 +1,15 @@
 [[mgr.prepend_keymap]]
-on  = ["M", "d"]
-run = "plugin mount"
-desc= "Manage  Mounts Devices"
-
-[[mgr.prepend_keymap]]
 on = "<A-d>"
 run = "shell -- ripdrag --no-click --and-exit --icon-size 64 --target --all \"$@\""
 desc = "Arrastrar y soltar archivos desde y hacia Yazi"
 
 [[mgr.prepend_keymap]]
-on  = ["M", "s"]
-run = "plugin sshfs -- menu"
-desc = "Open SSHFS options"
+on = ["M", "b"]
+desc = "Start bunny.yazi"
+run = "plugin bunny"
 
+# Optionally, add another keymap to immediately fuzzy search bookmarks
+[[mgr.prepend_keymap]]
+desc = "Start bunny.yazi fuzzy search"
+on = ["M", "B"]
+run = "plugin bunny fuzzy"
