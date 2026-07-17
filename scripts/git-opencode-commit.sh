@@ -193,7 +193,13 @@ if [[ $OPENCODE_STATUS -ne 0 ]]; then
 fi
 
 if [[ -z "${AI_MSG// /}" ]]; then
-    styled_err "El mensaje generado por OpenCode está vacío."
+    styled_err "El mensaje generado por OpenCode está vacío (código de salida: $OPENCODE_STATUS)."
+    if [[ -n "${ERR_MSG// /}" ]]; then
+        styled_info "Detalle de stderr:\n$ERR_MSG"
+    else
+        styled_info "opencode no reportó ningún error. Posible causa: detecta que"
+        styled_info "stdout no es una terminal y no emite salida."
+    fi
     exit 1
 fi
 

@@ -192,7 +192,13 @@ if [[ $AGY_STATUS -ne 0 ]]; then
 fi
 
 if [[ -z "${AI_MSG// /}" ]]; then
-    styled_err "El mensaje generado por agy está vacío."
+    styled_err "El mensaje generado por agy está vacío (código de salida: $AGY_STATUS)."
+    if [[ -n "${ERR_MSG// /}" ]]; then
+        styled_info "Detalle de stderr:\n$ERR_MSG"
+    else
+        styled_info "agy no reportó ningún error. Posible causa: agy detecta que"
+        styled_info "stdout no es una terminal y no emite salida."
+    fi
     exit 1
 fi
 
