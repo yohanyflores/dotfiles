@@ -9,6 +9,38 @@
 
 set -euo pipefail
 
+# --- Configuración ---
+# Modelo barato para esta tarea, formato provider/model (ver `opencode models`).
+# deepseek-v4-flash-free: gratuito y rápido, suficiente para commit messages.
+# Sobreescribible por entorno: OPENCODE_MODEL="opencode-go/glm-5.2" git-opencode-commit.sh
+OPENCODE_MODEL="${OPENCODE_MODEL:-opencode-go/glm-5.2}"
+
+# Límite de seguridad: cada argumento de un comando en Linux tiene un tope de
+# ~128 KiB (MAX_ARG_STRLEN). Diffs mayores romperían la invocación.
+MAX_DIFF_BYTES=100000
+
+OPENCODE_PROMPT='Eres un ingeniero de software senior experto en historiales de git limpios y mantenibles. Tu única tarea: analizar el diff incluido al final de este mensaje y producir el mensaje de commit definitivo, en español, siguiendo Conventional Commits. No uses herramientas ni leas archivos: todo el contexto necesario está en el diff.
+
+Proceso de análisis (interno, no lo muestres):
+1. Agrupa los cambios por área lógica (módulo, capa, feature).
+2. Distingue el cambio de fondo (la intención) de los cambios mecánicos derivados (imports, renombres, formato).
+3. Determina el tipo dominante y el scope: el módulo o componente principal afectado.
+4. Detecta breaking changes: firmas públicas, contratos de API, formatos de datos o variables de entorno modificados.
+
+Formato de salida:
+- Título: <tipo>(<scope>): <resumen en imperativo>, máximo 50 caracteres, minúscula tras el tipo, sin punto final. Tipos válidos: feat, fix, refactor, perf, docs, test, build, ci, chore, style, revert. Omite el scope si el cambio es transversal.
+- Si el cambio es simple y autoexplicativo, el título solo es suficiente.
+- Si el cambio es complejo o afecta varias áreas: título, línea en blanco, y cuerpo breve (máximo 72 caracteres por línea) que explique el qué y el porqué, nunca el cómo línea por línea.
+- Si hay breaking change: línea en blanco y "BREAKING CHANGE: <descripción>".
+
+Reglas estrictas:
+- No inventes motivaciones, tickets, issues ni contexto que no se infiera del diff. Si el porqué no es deducible, describe solo lo observable.
+- No enumeres archivos ni repitas lo que el diff ya muestra de forma obvia.
+- Si el diff mezcla cambios no relacionados entre sí, genera el mensaje del cambio principal y agrega al final: "# NOTA: considera dividir en commits separados".
+- Responde ÚNICAMENTE con el texto crudo del mensaje: sin bloques de código, sin comillas, sin preámbulos ni explicaciones. Tu salida se pasa directo a git commit -F -.
+
+=== DIFF ==='
+
 # --- Forzar UTF-8 para que los acentos se muestren bien en editores externos ---
 if locale -a 2>/dev/null | grep -qi 'en_US.utf.*8'; then
     export LANG="en_US.UTF-8"
@@ -94,39 +126,36 @@ if [[ $OPENCODE_AUTH_STATUS -ne 0 ]] || [[ "$CLEAN_AUTH_OUT" =~ [[:space:]]0[[:s
 fi
 
 # --- 3. Generar el mensaje con opencode ---
+DIFF=$(git --no-pager diff --staged)
+
+DIFF_BYTES=${#DIFF}
+if (( DIFF_BYTES > MAX_DIFF_BYTES )); then
+    styled_err "El diff es demasiado grande (${DIFF_BYTES} bytes, límite ${MAX_DIFF_BYTES})."
+    styled_info "Divide el commit en partes más pequeñas o escribe el mensaje manualmente."
+    exit 1
+fi
+
 styled_header "⚡ Generando commit con OpenCode (AI)..."
 
-set +e
-DIFF=$(git diff --staged)
 OUT_FILE=$(mktemp /tmp/opencode_out_XXXXXX)
 ERR_FILE=$(mktemp /tmp/opencode_err_XXXXXX)
+trap 'rm -f "$OUT_FILE" "$ERR_FILE"' EXIT
 
-opencode run "Genera un mensaje de commit en formato Conventional Commits en español para los cambios del diff recibido.
-
-Sigue estas reglas:
-1. Si el cambio es simple o pequeño, genera un mensaje de una sola línea (ej. 'fix(auth): corregir validación').
-2. Si el cambio es complejo, introduce lógica nueva o afecta varios archivos, genera un formato estructurado:
-   - Primera línea: Título conciso (máximo 72 caracteres) en formato Conventional Commits.
-   - Segunda línea: En blanco.
-   - Líneas siguientes: Cuerpo explicativo corto (en párrafos o viñetas) que detalle el qué y el porqué.
-3. Devuelve ÚNICAMENTE el texto crudo del mensaje de commit, sin bloques de código markdown, sin comillas externas y sin explicaciones adicionales:
+set +e
+opencode run --pure --model "$OPENCODE_MODEL" "$OPENCODE_PROMPT
 
 $DIFF" >"$OUT_FILE" 2>"$ERR_FILE"
 OPENCODE_STATUS=$?
+set -e
 
 AI_MSG=$(cat "$OUT_FILE")
 ERR_MSG=$(cat "$ERR_FILE")
-
-rm -f "$OUT_FILE" "$ERR_FILE"
-set -e
 
 # Detectar si el texto contiene patrones de solicitud de inicio de sesión (cuando el status es 0 pero igual falló)
 is_login_prompt() {
     local text="${1}"
     if [[ "$text" =~ "Authentication required" ]] || \
        [[ "$text" =~ "Please visit the URL" ]] || \
-       [[ "$text" =~ "accounts.google.com" ]] || \
-       [[ "$text" =~ "oauth2/auth" ]] || \
        [[ "$text" =~ "Enter authorization code" ]] || \
        [[ "$text" =~ "Please log in" ]] || \
        [[ "$text" =~ "Please sign in" ]]; then
@@ -138,10 +167,11 @@ is_login_prompt() {
 # Detectar errores de autenticación genéricos cuando el comando falló (status != 0)
 is_auth_error() {
     local text="${1,,}"
-    if [[ "$text" =~ "auth" ]] || [[ "$text" =~ "login" ]] || [[ "$text" =~ "credential" ]] || \
-       [[ "$text" =~ "token" ]] || [[ "$text" =~ "unauthorized" ]] || [[ "$text" =~ "permission" ]] || \
-       [[ "$text" =~ "api-key" ]] || [[ "$text" =~ "api key" ]] || [[ "$text" =~ "sign in" ]] || \
-       [[ "$text" =~ "signin" ]] || [[ "$text" =~ "sesión" ]] || [[ "$text" =~ "sesion" ]]; then
+    if [[ "$text" =~ "unauthorized" ]] || [[ "$text" =~ "credential" ]] || \
+       [[ "$text" =~ "sign in" ]] || [[ "$text" =~ "signin" ]] || \
+       [[ "$text" =~ "log in" ]] || [[ "$text" =~ "login" ]] || \
+       [[ "$text" =~ "api key" ]] || [[ "$text" =~ "api-key" ]] || \
+       [[ "$text" =~ "authentication" ]]; then
         return 0
     fi
     return 1
@@ -174,7 +204,12 @@ if [[ -z "${AI_MSG// /}" ]]; then
     exit 1
 fi
 
-# --- 3. Presentar el editor interactivo ---
+# Advertir (sin bloquear) si el título no parece un Conventional Commit válido
+if ! head -1 <<<"$AI_MSG" | grep -qE '^(feat|fix|refactor|perf|docs|test|build|ci|chore|style|revert)(\([^)]+\))?!?: .+'; then
+    styled_warn "El título generado no parece Conventional Commits. Revísalo antes de aceptar."
+fi
+
+# --- 4. Presentar el editor interactivo ---
 if $HAS_GUM; then
     # ── Flujo con gum: un solo paso ──
     styled_header "✏️  Revisa el mensaje — edítalo si quieres"
@@ -238,15 +273,17 @@ else
     esac
 fi
 
-# --- 4. Validar y ejecutar el commit ---
-FINAL_MSG=$(echo "$FINAL_MSG" | sed '/^[[:space:]]*$/d')
+# --- 5. Validar y ejecutar el commit ---
+# Recortar solo líneas en blanco al inicio y al final, preservando la línea
+# en blanco entre título y cuerpo (requerida por Conventional Commits).
+FINAL_MSG=$(printf '%s\n' "$FINAL_MSG" | sed -e '/./,$!d' | sed -e ':a' -e '/^\n*$/{$d;N;ba' -e '}')
 
 if [[ -z "${FINAL_MSG// /}" ]]; then
     styled_warn "Mensaje vacío. Commit abortado."
     exit 0
 fi
 
-git commit -m "$FINAL_MSG"
+printf '%s\n' "$FINAL_MSG" | git commit -F -
 
 echo ""
 styled_ok "Commit realizado con éxito"
