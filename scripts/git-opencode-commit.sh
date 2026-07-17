@@ -203,9 +203,13 @@ if [[ -z "${AI_MSG// /}" ]]; then
     exit 1
 fi
 
-# Advertir (sin bloquear) si el título no parece un Conventional Commit válido
+# Validación bloqueante: si el título no es un Conventional Commit, la salida
+# no es un mensaje válido (banner, razonamiento del modelo, error). Abortar.
 if ! head -1 <<<"$AI_MSG" | grep -qE '^(feat|fix|refactor|perf|docs|test|build|ci|chore|style|revert)(\([^)]+\))?!?: .+'; then
-    styled_warn "El título generado no parece Conventional Commits. Revísalo antes de aceptar."
+    styled_err "La salida de OpenCode no es un mensaje de commit válido."
+    styled_info "Primeras líneas recibidas:"
+    head -5 <<<"$AI_MSG" | sed 's/^/    /'
+    exit 1
 fi
 
 # --- 4. Presentar el editor interactivo ---
@@ -251,10 +255,16 @@ else
     echo ""
     echo -e "  \e[36m[a]\e[0m Aceptar   \e[36m[e]\e[0m Editar   \e[36m[c]\e[0m Cancelar"
     echo -n "  > "
-    read -r OPT < /dev/tty
+    if ! read -r OPT < /dev/tty; then
+        # EOF: sin terminal interactiva (p.ej. lanzado desde lazygit sin TTY).
+        # Nunca aceptar por omisión: podría commitear salida no revisada.
+        echo ""
+        styled_err "No hay terminal interactiva para confirmar. Commit abortado."
+        exit 1
+    fi
 
     case "${OPT,,}" in
-        a|y|"")
+        a|y)
             FINAL_MSG="$AI_MSG"
             ;;
         e)
