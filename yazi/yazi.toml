@@ -3,11 +3,7 @@ mouse_events = [ "click", "scroll", "touch", "move", "drag" ]
 
 [opener]
 edit = [
-	{
-		run = '${EDITOR:-micro} "$@"',
-		block = true,
-		for = "linux"
-	}
+	{ run = '${EDITOR:-micro} "$@"', desc = "Editar", block = true, for = "linux" }
 ]
 
 reveal = [
@@ -31,6 +27,7 @@ xdg = [
 	}
 ]
 
+[open]
 prepend_rules = [
 	{ mime = "image/*", use = [ "xdg", "reveal" ] },
 	{ mime = "text/*",  use = [ "edit", "xdg" ] },
