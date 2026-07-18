@@ -2,12 +2,39 @@
 mouse_events = [ "click", "scroll", "touch", "move", "drag" ]
 
 [opener]
+edit = [
+	{
+		run = '${EDITOR:-micro} "$@"',
+		block = true,
+		for = "linux"
+	}
+]
+
+reveal = [
+	{
+		run = 'open -R "$1"',
+		desc = "Reveal",
+		for = "linux"
+	},
+	{
+		run = 'xdg-open "$(dirname "$1")"',
+		desc = "Reveal",
+		for  = "linux"
+	},
+]
+
 xdg = [
 	{
 		run = 'xdg-open "$@"',
 		desc = 'Abrir con xdg-open',
 		for = "linux"
 	}
+]
+
+prepend_rules = [
+	{ mime = "image/*", use = [ "xdg", "reveal" ] },
+	{ mime = "text/*",  use = [ "edit", "xdg" ] },
+	{ url = "*",        use = [ "edit", "xdg", "reveal" ] },
 ]
 
 [[plugin.prepend_fetchers]]
