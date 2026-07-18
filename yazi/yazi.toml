@@ -6,32 +6,27 @@ edit = [
 	{ run = '${EDITOR:-micro} "$@"', desc = "Editar", block = true, for = "linux" }
 ]
 
-reveal = [
-	{
-		run = 'open -R "$1"',
-		desc = "Reveal",
-		for = "linux"
-	},
-	{
-		run = 'xdg-open "$(dirname "$1")"',
-		desc = "Reveal",
-		for  = "linux"
-	},
+micro = [
+	{ run = 'micro "$@"', desc = "Editar con Micro", block = true, for = "linux" }
+]
+glow = [
+	{ run = 'glow -p "$@"', desc = "Ver con Glow", block = true, for = "linux" }
 ]
 
+reveal = [
+	{ run = 'xdg-open "$(dirname "$1")"', desc = "Reveal", for = "linux" }
+]
 xdg = [
-	{
-		run = 'xdg-open "$@"',
-		desc = 'Abrir con xdg-open',
-		for = "linux"
-	}
+	{ run = 'xdg-open "$@"', desc = "Abrir con xdg-open", for = "linux" }
 ]
 
 [open]
 prepend_rules = [
+	# Markdown primero: glow por defecto, con nvim/micro como alternativas en Shift+O
+	{ url = "*.md",     use = [ "glow", "edit", "micro" ] },
 	{ mime = "image/*", use = [ "xdg", "reveal" ] },
-	{ mime = "text/*",  use = [ "edit", "xdg" ] },
-	{ url = "*",        use = [ "edit", "xdg", "reveal" ] },
+	{ mime = "text/*",  use = [ "edit", "micro", "xdg" ] },
+	{ url = "*",        use = [ "edit", "micro", "xdg", "reveal" ] },
 ]
 
 [[plugin.prepend_fetchers]]
