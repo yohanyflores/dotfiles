@@ -4,17 +4,8 @@ Este documento resume las decisiones de diseño y la arquitectura implementada e
 
 ## Arquitectura y Componentes
 
-1. **`install-devcontainer.sh` (Script de Instalación en el Contenedor)**
-   - **Perfiles (`DOTFILES_PROFILE`)**:
-     - `core` (Default): Neovim, Zellij, Tmux, Just, Lazygit, Ripgrep, fd, fzf, jq, yq, Git, curl, unzip, zip.
-     - `nice`: Bat, Eza, Delta, Shellcheck, shfmt, Tree, xh, Yazi, Micro, Gomplate, Gum.
-     - `experimental`: antigravity-cli, opencode.
-     - `full`: Instala todas las anteriores.
-   - **Caché Persistente**:
-     - Las descargas se realizan hacia una carpeta montada (`DOTFILES_CACHE_DIR`).
-     - Si la herramienta ya existe en `~/.local/bin` con la versión correcta, se omite.
-     - Si está en caché, se instala desde ahí para no descargar de nuevo.
-     - Si no está, se descarga, se valida opcionalmente el checksum, se copia en caché y se instala.
+1. **`install.sh` (Configuración dentro del contenedor)**
+   - Aplica las configuraciones personales sin instalar herramientas del sistema.
    - **Enlace de Dotfiles**:
      - Crea enlaces simbólicos hacia carpetas en `~/.config` y archivos en `$HOME`.
      - Respaldos con marca de tiempo (`.bak_$(date)`) para evitar pérdidas.
@@ -47,7 +38,7 @@ Los binarios descargados se versionan y aíslan en el host bajo la siguiente est
 
 1. Dar permisos de ejecución:
    ```bash
-   chmod +x install-devcontainer.sh bin/dcdev
+   chmod +x install.sh bin/dcdev
    ```
 2. Crear un symlink de `dcdev` a tu PATH local del host:
    ```bash

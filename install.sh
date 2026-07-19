@@ -62,12 +62,22 @@ create_symlink() {
   ln -s "$src" "$dest"
 }
 
+link_tmux_config() {
+  create_symlink "$DOTFILES_DIR/tmux" "$HOME/.config/tmux"
+  # Ruta clásica requerida por tmux en todas las versiones soportadas.
+  create_symlink "$DOTFILES_DIR/tmux/tmux.conf" "$HOME/.tmux.conf"
+}
+
 # ==============================================================================
 # 1. PREPARACIÓN DE DIRECTORIOS
 # ==============================================================================
 log_info "Preparando directorios locales..."
 mkdir -p "$HOME/.local/bin"
 mkdir -p "$HOME/.config"
+
+# Aplicar tmux antes de cualquier configuración opcional. Así el enlace queda
+# instalado incluso si Fish, los agentes o los plugins no están disponibles.
+link_tmux_config
 
 # ==============================================================================
 # 2. CONFIGURACIÓN DE SHELLS (~/.bashrc y ~/.zshrc)
@@ -195,10 +205,7 @@ create_symlink "$DOTFILES_DIR/nvim" "$HOME/.config/nvim"
 create_symlink "$DOTFILES_DIR/lazyvim" "$HOME/.config/lazyvim"
 create_symlink "$DOTFILES_DIR/micro" "$HOME/.config/micro"
 create_symlink "$DOTFILES_DIR/zellij" "$HOME/.config/zellij"
-create_symlink "$DOTFILES_DIR/tmux" "$HOME/.config/tmux"
-# ~/.tmux.conf mantiene compatibilidad con versiones y distribuciones que no
-# buscan automáticamente la ruta XDG ~/.config/tmux/tmux.conf.
-create_symlink "$DOTFILES_DIR/tmux/tmux.conf" "$HOME/.tmux.conf"
+link_tmux_config
 create_symlink "$DOTFILES_DIR/fish" "$HOME/.config/fish"
 create_symlink "$DOTFILES_DIR/lazygit" "$HOME/.config/lazygit"
 create_symlink "$DOTFILES_DIR/scripts/git-agy-commit.sh" "$HOME/.local/bin/git-agy-commit"

@@ -34,7 +34,7 @@ Vincula el script wrapper `yobydev` a un directorio que esté en tu `$PATH` de l
 
 ```bash
 # Otorgar permisos de ejecución en la carpeta de dotfiles
-chmod +x install-devcontainer.sh bin/yobydev
+chmod +x install.sh bin/yobydev
 
 # Crear symlink en tu binario local
 ln -sf ~/dotfiles/bin/yobydev ~/.local/bin/yobydev
@@ -46,9 +46,6 @@ Para personalizar el comportamiento, puedes exportar las siguientes variables en
 ```bash
 # Ruta de tu repositorio de dotfiles
 export DOTFILES_REPOSITORY="git@github.com:usuario/dotfiles.git"
-
-# Perfil de herramientas: 'core' (default) o 'full'
-export DOTFILES_PROFILE="core"
 
 # Token de GitHub para evitar límites de cuota (opcional)
 export GITHUB_TOKEN="ghp_tuTokenAqui"
@@ -98,9 +95,11 @@ Ambos atajos abrirán un editor interactivo usando `gum` (o un fallback interact
 
 ---
 
-## 📦 Catálogo de Herramientas Soportadas
+## 📦 Catálogo de Herramientas
 
-El instalador clasifica las herramientas mediante perfiles (`DOTFILES_PROFILE`):
+`tools.json` conserva las versiones de referencia que consulta `yobydev update`.
+`install.sh` sólo aplica configuraciones dentro del contenedor y no instala estas
+herramientas.
 
 | Perfil | Herramienta | Propósito | Comando de Prueba |
 | :--- | :--- | :--- | :--- |
