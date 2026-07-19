@@ -5,6 +5,7 @@
 keybinds clear-defaults=true {
     locked {
         bind "Ctrl Space" { SwitchToMode "normal"; }
+        bind "F12" { SwitchToMode "normal"; }
     }
     pane {
         bind "left" { MoveFocus "left"; }
@@ -185,6 +186,7 @@ keybinds clear-defaults=true {
     // Líder común con tmux. Abre una capa momentánea de comandos.
     shared_except "locked" "tmux" {
         bind "Ctrl Space" { SwitchToMode "tmux"; }
+        bind "F12" { SwitchToMode "tmux"; }
     }
     shared_except "locked" "scroll" "search" {
         bind "Ctrl s" { SwitchToMode "scroll"; }
@@ -254,6 +256,7 @@ keybinds clear-defaults=true {
         bind "[" { SwitchToMode "scroll"; }
         // Doble líder envía el byte NUL (Ctrl-Space) al programa interno.
         bind "Ctrl Space" { Write 0; SwitchToMode "normal"; }
+        bind "F12" { SwitchToMode "normal"; }
         bind "c" { NewTab; SwitchToMode "normal"; }
         bind "g" { SwitchToMode "locked"; }
         bind "h" { MoveFocus "left"; SwitchToMode "normal"; }

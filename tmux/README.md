@@ -10,13 +10,15 @@ comandos periódicos externos.
 tmux new -As dev
 ```
 
-El prefijo común de tmux y Zellij es `Ctrl-Space`. Si necesitas enviar esa
-combinación a un programa dentro del multiplexor, púlsala dos veces.
+El líder común de tmux y Zellij es `Ctrl-Space`, con `F12` como alternativa.
+Si necesitas enviar `Ctrl-Space` a un programa dentro del multiplexor, púlsalo
+dos veces.
 
 ## Atajos principales
 
 | Atajo | Acción |
 | --- | --- |
+| `Ctrl-Space` o `F12` | Activar la capa de comandos |
 | `Ctrl-Space` + `\|` | Dividir a la derecha |
 | `Ctrl-Space` + `-` | Dividir hacia abajo |
 | `Ctrl-Space` + `h/j/k/l` | Cambiar de panel |
@@ -33,7 +35,7 @@ combinación a un programa dentro del multiplexor, púlsala dos veces.
 | `Ctrl-Space` + `?` | Ver todos los atajos |
 
 Los paneles y las ventanas nuevas conservan el directorio actual. La barra
-inferior muestra la sesión, las ventanas, el directorio del panel, el nombre del
+superior muestra la sesión, las ventanas, el directorio del panel, el nombre del
 contenedor o host y la hora. `KEYS` reemplaza a `TMUX` mientras el prefijo está
 activo, y `Z` identifica una ventana con un panel maximizado.
 

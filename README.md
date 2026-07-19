@@ -78,9 +78,9 @@ reconocen la ruta XDG; no requiere plugins ni pasos adicionales.
 tmux new -As dev
 ```
 
-El prefijo común de tmux y Zellij es `Ctrl-Space`. Úsalo con `|` o `-` para
-dividir paneles, con `h/j/k/l` para navegar, con `z` para maximizar y con `r`
-para recargar tmux. La guía completa está en
+El líder común de tmux y Zellij es `Ctrl-Space`, con `F12` como alternativa.
+Úsalo con `|` o `-` para dividir paneles, con `h/j/k/l` para navegar, con `z`
+para maximizar y con `r` para recargar tmux. La guía completa está en
 [`tmux/README.md`](tmux/README.md).
 
 ### 💡 Atajos de Commit con IA en Lazygit
