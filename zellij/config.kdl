@@ -4,7 +4,7 @@
 
 keybinds clear-defaults=true {
     locked {
-        bind "Ctrl a" { SwitchToMode "normal"; }
+        bind "Ctrl Space" { SwitchToMode "normal"; }
     }
     pane {
         bind "left" { MoveFocus "left"; }
@@ -159,7 +159,6 @@ keybinds clear-defaults=true {
         bind "Alt [" { PreviousSwapLayout; }
         bind "Alt ]" { NextSwapLayout; }
         bind "Alt f" { ToggleFloatingPanes; }
-        bind "Ctrl a" { SwitchToMode "locked"; }
         bind "Alt i" { MoveTab "left"; }
         bind "Alt n" { NewPane; }
         bind "Alt o" { MoveTab "right"; }
@@ -183,8 +182,9 @@ keybinds clear-defaults=true {
         bind "Alt k" { MoveFocus "up"; }
         bind "Alt l" { MoveFocusOrTab "right"; }
     }
-    shared_except "locked" "scroll" "search" "tmux" {
-        bind "Ctrl b" { SwitchToMode "tmux"; }
+    // Líder común con tmux. Abre una capa momentánea de comandos.
+    shared_except "locked" "tmux" {
+        bind "Ctrl Space" { SwitchToMode "tmux"; }
     }
     shared_except "locked" "scroll" "search" {
         bind "Ctrl s" { SwitchToMode "scroll"; }
@@ -248,12 +248,14 @@ keybinds clear-defaults=true {
         bind "up" { MoveFocus "up"; SwitchToMode "normal"; }
         bind "right" { MoveFocus "right"; SwitchToMode "normal"; }
         bind "space" { NextSwapLayout; }
-        bind "\"" { NewPane "down"; SwitchToMode "normal"; }
-        bind "%" { NewPane "right"; SwitchToMode "normal"; }
+        bind "-" { NewPane "down"; SwitchToMode "normal"; }
+        bind "|" { NewPane "right"; SwitchToMode "normal"; }
         bind "," { SwitchToMode "renametab"; }
         bind "[" { SwitchToMode "scroll"; }
-        bind "Ctrl b" { Write 2; SwitchToMode "normal"; }
+        // Doble líder envía el byte NUL (Ctrl-Space) al programa interno.
+        bind "Ctrl Space" { Write 0; SwitchToMode "normal"; }
         bind "c" { NewTab; SwitchToMode "normal"; }
+        bind "g" { SwitchToMode "locked"; }
         bind "h" { MoveFocus "left"; SwitchToMode "normal"; }
         bind "j" { MoveFocus "down"; SwitchToMode "normal"; }
         bind "k" { MoveFocus "up"; SwitchToMode "normal"; }
