@@ -196,6 +196,9 @@ create_symlink "$DOTFILES_DIR/lazyvim" "$HOME/.config/lazyvim"
 create_symlink "$DOTFILES_DIR/micro" "$HOME/.config/micro"
 create_symlink "$DOTFILES_DIR/zellij" "$HOME/.config/zellij"
 create_symlink "$DOTFILES_DIR/tmux" "$HOME/.config/tmux"
+# ~/.tmux.conf mantiene compatibilidad con versiones y distribuciones que no
+# buscan automáticamente la ruta XDG ~/.config/tmux/tmux.conf.
+create_symlink "$DOTFILES_DIR/tmux/tmux.conf" "$HOME/.tmux.conf"
 create_symlink "$DOTFILES_DIR/fish" "$HOME/.config/fish"
 create_symlink "$DOTFILES_DIR/lazygit" "$HOME/.config/lazygit"
 create_symlink "$DOTFILES_DIR/scripts/git-agy-commit.sh" "$HOME/.local/bin/git-agy-commit"
@@ -211,6 +214,16 @@ fi
 
 if [[ -f "$DOTFILES_DIR/just/justfile" ]]; then
   create_symlink "$DOTFILES_DIR/just/justfile" "$HOME/.justfile"
+fi
+
+# Las sesiones que ya estaban abiertas conservan la configuración en memoria.
+# Recargarlas evita tener que matar el servidor de tmux tras reinstalar dotfiles.
+if command -v tmux >/dev/null 2>&1 && tmux list-sessions >/dev/null 2>&1; then
+  if tmux source-file "$HOME/.tmux.conf"; then
+    log_info "Configuración recargada en las sesiones de tmux activas."
+  else
+    log_warn "No se pudo recargar tmux; las sesiones nuevas sí usarán la configuración."
+  fi
 fi
 
 # Asegurar persistencia del PATH en ~/.bashrc

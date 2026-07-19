@@ -36,3 +36,17 @@ Los paneles y las ventanas nuevas conservan el directorio actual. La barra
 inferior muestra la sesión, las ventanas, el directorio del panel, el nombre del
 contenedor o host y la hora. `KEYS` reemplaza a `TMUX` mientras el prefijo está
 activo, y `Z` identifica una ventana con un panel maximizado.
+
+## Si tmux sigue usando `Ctrl-b`
+
+Una sesión iniciada antes de instalar o actualizar estos dotfiles mantiene su
+configuración anterior en memoria. Aplica el archivo directamente:
+
+```bash
+tmux source-file ~/.config/tmux/tmux.conf
+tmux show-options -gv prefix
+```
+
+El segundo comando debe imprimir `C-a`. Al volver a ejecutar `install.sh`, se
+creará también `~/.tmux.conf` y las sesiones existentes se recargarán de forma
+automática.

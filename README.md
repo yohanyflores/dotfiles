@@ -72,8 +72,9 @@ export GITHUB_TOKEN="ghp_tuTokenAqui"
 ### 🖥️ Ambiente Tmux
 
 La configuración de tmux es autocontenida, usa la paleta Catppuccin Mocha y
-mantiene una interfaz compacta inspirada en Zellij. El instalador la enlaza en
-`~/.config/tmux`; no requiere plugins ni pasos adicionales.
+mantiene una interfaz compacta inspirada en Zellij. El instalador crea tanto
+`~/.config/tmux` como `~/.tmux.conf` para funcionar también en versiones que no
+reconocen la ruta XDG; no requiere plugins ni pasos adicionales.
 
 ```bash
 # Crear la sesión "dev" o volver a ella si ya existe
