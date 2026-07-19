@@ -69,6 +69,22 @@ export GITHUB_TOKEN="ghp_tuTokenAqui"
    - Si hay múltiples archivos `devcontainer.json` (típico en monorepos), el script te presentará un menú interactivo usando `gum` (si está instalado en tu host) o un menú Bash `select` nativo como fallback para elegir cuál deseas iniciar.
 4. El script levantará el entorno, inyectará tus dotfiles, correrá el instalador inteligente (usando la caché si los binarios ya fueron descargados previamente) y te dejará dentro de una sesión interactiva del contenedor.
 
+### 🖥️ Ambiente Tmux
+
+La configuración de tmux es autocontenida, usa la paleta Catppuccin Mocha y
+mantiene una interfaz compacta inspirada en Zellij. El instalador la enlaza en
+`~/.config/tmux`; no requiere plugins ni pasos adicionales.
+
+```bash
+# Crear la sesión "dev" o volver a ella si ya existe
+tmux new -As dev
+```
+
+El prefijo es `Ctrl-a`. Usa `Ctrl-a` + `|` o `-` para dividir paneles,
+`Ctrl-a` + `h/j/k/l` para navegar, `Ctrl-a` + `z` para maximizar y
+`Ctrl-a` + `r` para recargar cambios. La guía completa está en
+[`tmux/README.md`](tmux/README.md).
+
 ### 💡 Atajos de Commit con IA en Lazygit
 
 Este repositorio incluye una integración directa con `lazygit`. Cuando te encuentres en el panel de **Files** (Archivos), puedes utilizar los siguientes atajos para generar automáticamente mensajes de commit convencionales basados en los cambios que tienes en stage:
