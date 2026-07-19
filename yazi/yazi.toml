@@ -45,3 +45,6 @@ group = "git"
 url = "*/"
 run = "eza-preview"
 
+[preview]
+max_width = 800
+max_height = 600
