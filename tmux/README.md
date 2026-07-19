@@ -2,7 +2,7 @@
 
 Configuración autocontenida para desarrollo en contenedores, con una interfaz
 inspirada en Zellij y su paleta predeterminada. No requiere TPM, plugins ni
-comandos periódicos externos.
+comandos periódicos externos. Requiere tmux 3.3 o posterior.
 
 ## Inicio rápido
 
@@ -12,6 +12,11 @@ tmux new -As dev
 
 El líder común de tmux y Zellij es `Ctrl-G`. Para enviar un `Ctrl-G` real a un
 programa dentro de tmux, activa la capa de comandos y luego usa `Alt-G`.
+
+El passthrough está habilitado para los paneles visibles, lo que permite que
+aplicaciones compatibles —como Yazi o Neovim— envíen protocolos de imágenes a
+la terminal anfitriona. La terminal también debe soportar el protocolo gráfico
+utilizado por la aplicación.
 
 ## Atajos principales
 
