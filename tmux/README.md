@@ -37,9 +37,9 @@ dos veces.
 | `Ctrl-Space` + `?` | Ver todos los atajos |
 
 Los paneles y las ventanas nuevas conservan el directorio actual. La barra
-superior muestra las ventanas, el directorio del panel, el nombre del contenedor
-o host y la hora. `COMMAND` sólo aparece mientras el líder está activo, y `Z`
-identifica una ventana con un panel maximizado.
+superior muestra `Tmux (sesión)` y las ventanas; cada marco muestra el proceso y
+la ruta de su panel, igual que Zellij. `F12 › COMMAND` sólo aparece mientras el
+líder está activo, y `Z` identifica una ventana con un panel maximizado.
 
 ## Si tmux sigue usando otro prefijo
 
