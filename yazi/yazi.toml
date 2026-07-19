@@ -48,3 +48,4 @@ run = "eza-preview"
 [preview]
 max_width = 800
 max_height = 600
+ueberzug_scale = 1
