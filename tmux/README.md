@@ -25,6 +25,8 @@ dos veces.
 | `Alt` + flechas | Cambiar de panel sin prefijo |
 | `Ctrl-Space` + `H/J/K/L` | Redimensionar el panel |
 | `Ctrl-Space` + `z` | Maximizar/restaurar el panel |
+| `Ctrl-Space` + `Space` | Abrir el selector de diseños |
+| `Alt` + `[` / `]` | Recorrer diseños |
 | `Ctrl-Space` + `c` | Crear una ventana |
 | `Ctrl-Space` + `1…9` | Ir a una ventana |
 | `Ctrl-Space` + `w` | Selector de ventanas |
@@ -35,9 +37,9 @@ dos veces.
 | `Ctrl-Space` + `?` | Ver todos los atajos |
 
 Los paneles y las ventanas nuevas conservan el directorio actual. La barra
-superior muestra la sesión, las ventanas, el directorio del panel, el nombre del
-contenedor o host y la hora. `KEYS` reemplaza a `TMUX` mientras el prefijo está
-activo, y `Z` identifica una ventana con un panel maximizado.
+superior muestra las ventanas, el directorio del panel, el nombre del contenedor
+o host y la hora. `COMMAND` sólo aparece mientras el líder está activo, y `Z`
+identifica una ventana con un panel maximizado.
 
 ## Si tmux sigue usando otro prefijo
 
