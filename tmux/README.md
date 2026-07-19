@@ -11,14 +11,14 @@ tmux new -As dev
 ```
 
 El líder común de tmux y Zellij es `Ctrl-G`. Para enviar un `Ctrl-G` real a un
-programa dentro del multiplexor, usa `Alt-G`.
+programa dentro de tmux, activa la capa de comandos y luego usa `Alt-G`.
 
 ## Atajos principales
 
 | Atajo | Acción |
 | --- | --- |
 | `Ctrl-G` | Activar la capa de comandos |
-| `Alt-G` | Enviar `Ctrl-G` a la aplicación |
+| `Ctrl-G` + `Alt-G` | Enviar `Ctrl-G` a la aplicación |
 | `Ctrl-G` + `\|` | Dividir a la derecha |
 | `Ctrl-G` + `-` | Dividir hacia abajo |
 | `Ctrl-G` + `h/j/k/l` | Cambiar de panel |
