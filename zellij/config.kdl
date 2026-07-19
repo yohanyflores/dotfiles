@@ -4,7 +4,6 @@
 
 keybinds clear-defaults=true {
     locked {
-        bind "Ctrl g" { SwitchToMode "normal"; }
         bind "Ctrl Space" { SwitchToMode "normal"; }
         bind "F12" { SwitchToMode "normal"; }
     }
@@ -161,7 +160,8 @@ keybinds clear-defaults=true {
         bind "Alt [" { PreviousSwapLayout; }
         bind "Alt ]" { NextSwapLayout; }
         bind "Alt f" { ToggleFloatingPanes; }
-        bind "Ctrl g" { SwitchToMode "locked"; }
+        bind "Ctrl Space" { SwitchToMode "locked"; }
+        bind "F12" { SwitchToMode "locked"; }
         bind "Alt i" { MoveTab "left"; }
         bind "Alt n" { NewPane; }
         bind "Alt o" { MoveTab "right"; }
@@ -184,11 +184,6 @@ keybinds clear-defaults=true {
         bind "Alt j" { MoveFocus "down"; }
         bind "Alt k" { MoveFocus "up"; }
         bind "Alt l" { MoveFocusOrTab "right"; }
-    }
-    // Líder común con tmux. Abre una capa momentánea de comandos.
-    shared_except "locked" "tmux" {
-        bind "Ctrl Space" { SwitchToMode "tmux"; }
-        bind "F12" { SwitchToMode "tmux"; }
     }
     shared_except "locked" "scroll" "search" {
         bind "Ctrl s" { SwitchToMode "scroll"; }
@@ -256,9 +251,6 @@ keybinds clear-defaults=true {
         bind "|" { NewPane "right"; SwitchToMode "normal"; }
         bind "," { SwitchToMode "renametab"; }
         bind "[" { SwitchToMode "scroll"; }
-        // Doble líder envía el byte NUL (Ctrl-Space) al programa interno.
-        bind "Ctrl Space" { Write 0; SwitchToMode "normal"; }
-        bind "F12" { SwitchToMode "normal"; }
         bind "c" { NewTab; SwitchToMode "normal"; }
         bind "g" { SwitchToMode "locked"; }
         bind "h" { MoveFocus "left"; SwitchToMode "normal"; }
