@@ -1,6 +1,6 @@
 [[mgr.prepend_keymap]]
 on = "<A-d>"
-run = "shell -- ripdrag --no-click --and-exit --icon-size 64 --target --all \"$@\""
+run = "shell -- ripdrag --no-click --and-exit --icon-size 64 --target --all \"%s\""
 desc = "Arrastrar y soltar archivos desde y hacia Yazi"
 
 [[mgr.prepend_keymap]]

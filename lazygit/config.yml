@@ -2,7 +2,6 @@ git:
   diffRenderers:
     - colorArg: always
       # pager: delta --dark --paging=never
-
       type: rawGit
 customCommands:
   - key: '<a-c>'
