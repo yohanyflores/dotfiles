@@ -5,9 +5,13 @@ hash = "18a2829738214fe9bca99a2fef19113d"
 
 [[plugin.deps]]
 use = "yazi-rs/plugins:git"
+rev = ""
+hash = ""
 
 [[plugin.deps]]
 use = "ahkohd/eza-preview"
+rev = ""
+hash = ""
 
 [flavor]
 deps = []

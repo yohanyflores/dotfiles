@@ -42,3 +42,6 @@ end
 
 # Added by Antigravity CLI installer
 set -gx PATH "/home/vscode/.local/bin" $PATH
+
+# opencode
+fish_add_path /home/vscode/.opencode/bin

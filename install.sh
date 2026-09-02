@@ -162,42 +162,7 @@ if command -v fish >/dev/null 2>&1; then
 fi
 
 # ==============================================================================
-# 3. PERSISTENCIA DE CONFIGURACIONES DE AGENTES (AGY Y OPENCODE)
-# ==============================================================================
-WORKSPACE_DIR=""
-if [[ -n "${YOBYDEV_WORKSPACE_FOLDER:-}" && -d "$YOBYDEV_WORKSPACE_FOLDER/.home" ]]; then
-  WORKSPACE_DIR="$YOBYDEV_WORKSPACE_FOLDER"
-elif [[ -n "${WORKSPACE_FOLDER:-}" && -d "$WORKSPACE_FOLDER/.home" ]]; then
-  WORKSPACE_DIR="$WORKSPACE_FOLDER"
-elif [[ -n "${WORKSPACE_ROOT:-}" && -d "$WORKSPACE_ROOT/.home" ]]; then
-  WORKSPACE_DIR="$WORKSPACE_ROOT"
-elif [[ -n "${WORKSPACE_HOME:-}" && -d "$WORKSPACE_HOME/.home" ]]; then
-  WORKSPACE_DIR="$WORKSPACE_HOME"
-elif [[ -d "/workspace/.home" ]]; then
-  WORKSPACE_DIR="/workspace"
-else
-  for ws in /workspaces/*; do
-    if [[ -d "$ws/.home" ]]; then
-      WORKSPACE_DIR="$ws"
-      break
-    fi
-  done
-fi
-
-if [[ -n "$WORKSPACE_DIR" ]]; then
-  log_info "Carpeta de persistencia detectada en: $WORKSPACE_DIR/.home"
-  mkdir -p "$WORKSPACE_DIR/.home/.gemini"
-  mkdir -p "$WORKSPACE_DIR/.home/.opencode"
-  mkdir -p "$WORKSPACE_DIR/.home/.local/share/opencode"
-  create_symlink "$WORKSPACE_DIR/.home/.gemini" "$HOME/.gemini"
-  create_symlink "$WORKSPACE_DIR/.home/.opencode" "$HOME/.opencode"
-  create_symlink "$WORKSPACE_DIR/.home/.local/share/opencode" "$HOME/.local/share/opencode"
-else
-  log_warn "No se detectó ninguna carpeta de persistencia (.home) en el espacio de trabajo. Omitiendo enlaces de agentes."
-fi
-
-# ==============================================================================
-# 4. ENLAZAR CONFIGURACIONES PERSONALES (DOTFILES)
+# 3. ENLAZAR CONFIGURACIONES PERSONALES (DOTFILES)
 # ==============================================================================
 log_info "Aplicando enlaces de configuración desde: $DOTFILES_DIR"
 

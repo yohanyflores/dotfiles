@@ -1,8 +1,9 @@
 git:
-  paging:
-    colorArg: always
-    pager: delta --dark --paging=never
+  diffRenderers:
+    - colorArg: always
+      # pager: delta --dark --paging=never
 
+      type: rawGit
 customCommands:
   - key: '<a-c>'
     command: 'git-agy-commit'
