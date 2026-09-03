@@ -111,26 +111,26 @@ auth_status() {
     case "$cli" in
         codex)
             if command -v timeout >/dev/null 2>&1; then
-                timeout 15s codex login status >/dev/null 2>&1
+                timeout -k 2s 15s codex login status </dev/null >/dev/null 2>&1
             else
-                codex login status >/dev/null 2>&1
+                codex login status </dev/null >/dev/null 2>&1
             fi
             ;;
         claude)
             if command -v timeout >/dev/null 2>&1; then
-                timeout 15s claude auth status >/dev/null 2>&1
+                timeout -k 2s 15s claude auth status </dev/null >/dev/null 2>&1
             else
-                claude auth status >/dev/null 2>&1
+                claude auth status </dev/null >/dev/null 2>&1
             fi
             ;;
         opencode)
             local output status
             set +e
             if command -v timeout >/dev/null 2>&1; then
-                output=$(timeout 15s opencode auth list 2>&1)
+                output=$(timeout -k 2s 15s opencode auth list </dev/null 2>&1)
                 status=$?
             else
-                output=$(opencode auth list 2>&1)
+                output=$(opencode auth list </dev/null 2>&1)
                 status=$?
             fi
             set -e
