@@ -85,12 +85,14 @@ para maximizar y con `r` para recargar tmux. La guía completa está en
 
 ### 💡 Atajos de Commit con IA en Lazygit
 
-Este repositorio incluye una integración directa con `lazygit`. Cuando te encuentres en el panel de **Files** (Archivos), puedes utilizar los siguientes atajos para generar automáticamente mensajes de commit convencionales basados en los cambios que tienes en stage:
+Este repositorio incluye una integración directa con `lazygit`. Cuando te encuentres en el panel de **Files** (Archivos), puedes utilizar los siguientes atajos para generar mensajes de commit convencionales basados en los cambios que tienes en stage:
 
-*   **`Alt + c`**: Genera un mensaje de commit usando **`agy`** (Antigravity).
-*   **`Alt + Shift + C` o `Alt + C`**: Genera un mensaje de commit usando **`opencode`**.
+*   **`Alt + c`**: Genera el mensaje con el CLI y modelo configurados, y permite revisarlo, completarlo o cancelar antes del commit.
+*   **`Alt + Shift + C` o `Alt + C`**: Abre el asistente para seleccionar y autenticar **Codex**, **Claude** u **OpenCode**, y elegir el modelo.
 
-Ambos atajos abrirán un editor interactivo usando `gum` (o un fallback interactivo en consola si no está instalado) para revisar, editar o cancelar el mensaje generado por la IA antes de confirmar el commit.
+La selección se guarda en `~/.config/git-ai-commit/config.json`; las credenciales siguen siendo administradas por cada CLI. Si aún no existe configuración, `git-ai-commit` abre automáticamente el asistente. El generador entrega el diff exclusivamente por entrada estándar y no habilita Agy porque su modo `--print` todavía no consume datos canalizados por `stdin`.
+
+Los comandos anteriores `git-agy-commit` y `git-opencode-commit` se conservan para compatibilidad y uso manual.
 
 
 ---

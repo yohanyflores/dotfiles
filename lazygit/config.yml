@@ -5,12 +5,12 @@ git:
       type: rawGit
 customCommands:
   - key: '<a-c>'
-    command: 'git-agy-commit'
+    command: 'git-ai-commit'
     context: 'files'
     output: 'terminal'
-    description: 'Generar mensaje de commit con agy (AI)'
+    description: 'Generar y revisar commit con el CLI configurado'
   - key: '<a-s-c>'
-    command: 'git-opencode-commit'
+    command: 'git-ai-commit-config'
     context: 'files'
     output: 'terminal'
-    description: 'Generar mensaje de commit con OpenCode (AI)'
+    description: 'Configurar CLI y modelo para commits con IA'
