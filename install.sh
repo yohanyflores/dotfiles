@@ -206,11 +206,9 @@ if ! grep -q "local/bin" "$HOME/.bashrc" 2>/dev/null; then
   log_info "PATH local agregado a ~/.bashrc"
 fi
 
-# Instalar todos los plugins definidos en package.toml
-if command -v ya >/dev/null 2>&1; then
-    echo "Instalando plugins de Yazi..."
-    ya pkg install
-fi
+# Los plugins de Yazi se distribuyen junto con estos dotfiles en
+# yazi/plugins. Este instalador sólo enlaza configuraciones y no descarga
+# dependencias; así también funciona cuando Yazi todavía no está instalado.
 
 # Crear marcador de éxito para yobydev / devcontainers
 mkdir -p "$HOME/.devcontainer"
