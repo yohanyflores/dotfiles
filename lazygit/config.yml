@@ -4,13 +4,30 @@ git:
       # pager: delta --dark --paging=never
       type: rawGit
 customCommands:
-  - key: '<a-c>'
-    command: 'git-ai-commit'
-    context: 'files'
-    output: 'terminal'
-    description: 'Generar y revisar commit con el CLI configurado'
-  - key: '<a-s-c>'
-    command: 'git-ai-commit-config'
-    context: 'files'
-    output: 'terminal'
-    description: 'Configurar CLI y modelo para commits con IA'
+    # Commit flotante: usar dentro de Zellij.
+    - key: '<alt+c>'
+      context: 'files'
+      description: 'Generar commit con IA en panel flotante'
+      command: 'git-ai-commit-zellij'
+      output: 'none'
+
+    # Commit convencional: funciona con terminal interactivo.
+    - key: '<alt+shift+c>'
+      context: 'files'
+      description: 'Generar commit con IA en el terminal'
+      command: 'git-ai-commit'
+      output: 'terminal'
+
+    # Configuración flotante: usar dentro de Zellij.
+    - key: '<alt+ctrl+c>'
+      context: 'files'
+      description: 'Configurar commits con IA en panel flotante'
+      command: 'git-ai-commit-config-zellij'
+      output: 'none'
+
+    # Configuración convencional: funciona con terminal interactivo.
+    - key: '<alt+ctrl+shift+c>'
+      context: 'files'
+      description: 'Configurar commits con IA en el terminal'
+      command: 'git-ai-commit-config'
+      output: 'terminal'
