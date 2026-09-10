@@ -31,3 +31,5 @@
     ci = commit
     st = status
     lg = log --oneline --graph --decorate
+[credential]
+	helper = "!f() { /home/vscode/.vscode-server/bin/a44adf7f53e00964ab890f9f8758a334f1fc15bc/node /tmp/vscode-remote-containers-d09adbb4-7653-4ee3-9973-83fbb50385f3.js git-credential-helper $*; }; f"
