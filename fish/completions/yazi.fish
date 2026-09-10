@@ -3,7 +3,5 @@ complete -c yazi -l chooser-file -d 'Write the selected files to this file on op
 complete -c yazi -l client-id -d 'Use the specified client ID, must be a globally unique number' -r
 complete -c yazi -l local-events -d 'Report the specified local events to stdout' -r
 complete -c yazi -l remote-events -d 'Report the specified remote events to stdout' -r
-complete -c yazi -l clear-cache -d 'Clear the cache directory (deprecated, use `ya cache clear`)'
-complete -c yazi -l debug -d 'Print debug information (deprecated, use `ya env`)'
 complete -c yazi -s V -l version -d 'Print version'
 complete -c yazi -s h -l help -d 'Print help'
