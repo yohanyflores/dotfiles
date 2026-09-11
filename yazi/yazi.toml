@@ -3,15 +3,15 @@ mouse_events = [ "click", "scroll", "touch", "move", "drag" ]
 
 [opener]
 edit = [
-    { run = '${EDITOR:-micro} %s', desc = "Editar", block = true, for = "linux" }
+    { run = 'printf "\033]0;%%s\007" "${EDITOR:-micro} $(basename "%s")"; ${EDITOR:-micro} %s', desc = "Editar", block = true, for = "linux" }
 ]
 
 micro = [
-    { run = 'micro %s', desc = "Editar con Micro", block = true, for = "linux" }
+    { run = 'printf "\033]0;%%s\007" "micro $(basename "%s")"; micro %s', desc = "Editar con Micro", block = true, for = "linux" }
 ]
 
 glow = [
-    { run = 'glow -p %s', desc = "Ver con Glow", block = true, for = "linux" }
+    { run = 'printf "\033]0;%%s\007" "glow $(basename "%s")"; glow -p %s', desc = "Ver con Glow", block = true, for = "linux" }
 ]
 
 reveal = [
