@@ -1,6 +1,9 @@
-# Candidato para subir al repositorio público de dotfiles.
-# El archivo debe vivir en la raíz del checkout y llamarse yobydev.toml.
-# No se ha aplicado todavía.
+# Entorno personal del autor para Yobydev. No representa una lista universal
+# obligatoria. El archivo vive en la raíz del checkout y se llama
+# yobydev.toml.
+
+[vars]
+yobydev_schema = 1
 
 [tools]
 neovim = "0.12.5"
@@ -11,10 +14,21 @@ starship = "1.26.0"
 zoxide = "0.10.0"
 bat = "0.26.1"
 eza = "0.23.5"
+yq = "4.53.6"
+just = "1.58.0"
+direnv = "2.37.1"
 delta = "0.19.2"
+shfmt = "3.14.0"
+xh = "0.26.2"
+gum = "2.0.0"
+glow = "3.0.0"
+gomplate = "5.2.0"
+jq = "1.8.2"
 ripgrep = "15.2.0"
 fd = "10.5.0"
 fzf = "0.74.3"
+shellcheck = "0.11.0"
+resvg = "0.48.1"
 
 [tool_alias]
 yazi = "github:sxyazi/yazi"
@@ -25,9 +39,19 @@ asset_pattern = "yazi-x86_64-unknown-linux-musl.zip"
 
 [dotfiles]
 "~/.config/nvim" = { source = "nvim", mode = "symlink" }
+"~/.config/lazyvim" = { source = "lazyvim", mode = "symlink" }
 "~/.config/yazi" = { source = "yazi", mode = "symlink" }
 "~/.config/zellij" = { source = "zellij", mode = "symlink" }
 "~/.config/micro" = { source = "micro", mode = "symlink" }
 "~/.config/lazygit" = { source = "lazygit", mode = "symlink" }
-"~/.config/fish" = { source = "fish", mode = "symlink" }
+"~/.config/fish/config.fish" = { source = "fish/config.fish", mode = "symlink" }
+"~/.config/fish/completions" = { source = "fish/completions", mode = "symlink" }
+"~/.config/fish/conf.d" = { source = "fish/conf.d", mode = "symlink" }
+"~/.config/fish/functions" = { source = "fish/functions", mode = "symlink" }
 "~/.config/starship.toml" = { source = "starship/starship.toml", mode = "symlink" }
+"~/.gitconfig" = { source = "git/gitconfig", mode = "symlink" }
+"~/.justfile" = { source = "just/justfile", mode = "symlink" }
+"~/.local/bin/git-ai-commit" = { source = "scripts/git-ai-commit.sh", mode = "symlink" }
+"~/.local/bin/git-ai-commit-config" = { source = "scripts/git-ai-commit-config.sh", mode = "symlink" }
+"~/.local/bin/git-ai-commit-zellij" = { source = "scripts/git-ai-commit-zellij.sh", mode = "symlink" }
+"~/.local/bin/git-ai-commit-config-zellij" = { source = "scripts/git-ai-commit-config-zellij.sh", mode = "symlink" }
