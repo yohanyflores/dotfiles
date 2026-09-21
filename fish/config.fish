@@ -29,7 +29,7 @@ if status is-interactive
     end
 
     # Inicializar mise
-    if command -v mise >/dev/null 2>&1
+    if command -v mise >/dev/null 2>&1; and not set -q YOBYDEV_MISE_MANAGED
         mise activate fish | source
     end
 
