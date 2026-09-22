@@ -39,6 +39,12 @@ yazi = "github:sxyazi/yazi"
 version = "26.9.1"
 asset_pattern = "yazi-x86_64-unknown-linux-musl.zip"
 
+[bootstrap.packages]
+"apt:chafa" = "latest"
+"apt:ffmpeg" = "latest"
+"apt:p7zip-full" = "latest"
+"apt:poppler-utils" = "latest"
+
 [dotfiles]
 "~/.config/nvim" = { source = "nvim", mode = "symlink" }
 "~/.config/lazyvim" = { source = "lazyvim", mode = "symlink" }
